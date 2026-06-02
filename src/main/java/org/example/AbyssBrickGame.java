@@ -12,7 +12,7 @@ public class AbyssBrickGame {
     public static final int GAME_HEIGHT = GameConstant.GAME_HEIGHT;
 
     // 游戏实体
-    private Ball ball;
+    private List<Ball> ballList;
     private Baffle baffle;
     private List<Brick> brickList;
 
@@ -23,12 +23,13 @@ public class AbyssBrickGame {
 
     public AbyssBrickGame() {
         brickList = new ArrayList<>();
+        ballList = new ArrayList<>();
         currentLevel = 1;
-        lifeCount = 3;
         gameRunning = true;
 
         // 初始化游戏、第一关砖块
         initGame();
+
         initLevelBrick(currentLevel);
     }
 
@@ -41,7 +42,8 @@ public class AbyssBrickGame {
         // 小球放在挡板正上方 15px 位置
         double ballStartX = baffle.getX() + GameConstant.BAFFLE_WIDTH / 2.0;
         double ballStartY = baffle.getY() - 15;
-        ball = new Ball(ballStartX, ballStartY, Color.WHITE);
+        Ball ball = new Ball(ballStartX, ballStartY);
+        ballList.add(ball);
     }
 
     //根据关卡等级生成砖块
@@ -92,8 +94,10 @@ public class AbyssBrickGame {
     //    游戏主循环
     public void gameLoop() {
         while (gameRunning) {
-            // 1. 小球移动（内部自带墙碰撞）
-            ball.move();
+            // 1. 所有小球移动（内部自带墙碰撞）
+            for (Ball ball : ballList) {
+                ball.move();
+            }
 
             // 2. 统一所有碰撞检测
             checkAllCollision();
@@ -112,31 +116,31 @@ public class AbyssBrickGame {
 
     //    全部碰撞调度
     private void checkAllCollision() {
-        // 小球 —— 挡板碰撞
-        CollisionDetector.checkBaffileCollision(ball, baffle);
+        // 遍历所有小球进行碰撞检测
+        for (Ball ball : ballList) {
+            // 小球 —— 挡板碰撞
+            CollisionDetector.checkBaffileCollision(ball, baffle);
 
-        // 小球 —— 所有砖块碰撞
-        for (Brick brick : brickList) {
-            CollisionDetector.checkBrickCollision(ball, brick);
+            // 小球 —— 所有砖块碰撞
+            for (Brick brick : brickList) {
+                CollisionDetector.checkBrickCollision(ball, brick);
 
-            // 礼物砖块被击碎，触发整行整列扣血
-            if (brick instanceof GiftBrick) {
-                GiftBrick gb = (GiftBrick) brick;
-                if (gb.isTiggerGift()) {
-                    CollisionDetector.triggerGiftSkill(brick, brickList);
+                // 礼物砖块被击碎，触发整行整列扣血
+                if (brick instanceof GiftBrick) {
+                    GiftBrick gb = (GiftBrick) brick;
+                    if (gb.isTiggerGift()) {
+                        CollisionDetector.triggerGiftSkill(brick, brickList);
+                    }
                 }
             }
         }
 
-        // 小球掉落底部：扣命、重置小球
-        if (CollisionDetector.isBallFallOut(ball)) {
-            lifeCount--;
-            if (lifeCount <= 0) {
-                gameRunning = false;
-            } else {
-                // 小球复位
-                ball.reset(GAME_WIDTH / 2.0, GAME_HEIGHT - 120);
-            }
+        // 移除已掉落的小球
+        ballList.removeIf(ball -> CollisionDetector.isBallFallOut(ball));
+
+        // 所有小球都掉落：游戏结束
+        if (ballList.isEmpty()) {
+            gameRunning = false;
         }
     }
 
@@ -154,14 +158,24 @@ public class AbyssBrickGame {
         // 全部打完 → 下一关
         if (allBrickDead) {
             currentLevel++;
+            
+            // 清空小球列表
+            ballList.clear();
+            
+            // 重新生成砖块
             initLevelBrick(currentLevel);
-            ball.reset(GAME_WIDTH / 2.0, GAME_HEIGHT - 120);
+            
+            // 重新初始化一个小球（和第一关一样的规则）
+            double ballStartX = baffle.getX() + GameConstant.BAFFLE_WIDTH / 2.0;
+            double ballStartY = baffle.getY() - 15;
+            Ball newBall = new Ball(ballStartX, ballStartY);
+            ballList.add(newBall);
         }
     }
 
     // ========== 给组员2 提供getter 用来绘制和键盘控制 ==========
-    public Ball getBall() {
-        return ball;
+    public List<Ball> getBallList() {
+        return ballList;
     }
 
     public Baffle getBaffle() {

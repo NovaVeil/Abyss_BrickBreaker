@@ -4,7 +4,7 @@ import java.util.List;
 
 /*
  碰撞检测工具类
- 负责：球碰挡板、球碰砖块
+ 负责：球碰挡板、球碰砖块检测、球掉出底部检测、碰碎gift砖块检测并触发相应道具功能
  所有方法都是静态工具方法，直接调用
  */
 public class CollisionDetector {

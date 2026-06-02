@@ -8,6 +8,7 @@ public class Ball {
     private final int radius;
     private double dx,dy;
     private Color color;
+    private int bricksHitcount = 0;  // 记录碰撞的砖块数
 
     //构造方法:初始化小球位置、半径、速度、颜色
     public Ball(double x, double y, int radius, double dx, double dy, Color color) {
@@ -20,10 +21,20 @@ public class Ball {
     }
 
     // 使用默认常量创建小球的构造方法
-    public Ball(double x, double y, Color color) {
+    public Ball(double x, double y) {
         this(x, y, GameConstant.BALL_RADIUS, 
              GameConstant.BALL_SPEED_X, 
              GameConstant.BALL_SPEED_Y, Color.WHITE);
+    }
+    public void incrementBricksHit() {
+        this.bricksHitcount++;
+    }
+
+    public int getBricksHit() {
+        return bricksHitcount;
+    }
+    public void resetBricksHit() {
+        this.bricksHitcount = 0;
     }
 
     //移动方法：更新小球的位置
@@ -59,15 +70,6 @@ public class Ball {
     //竖直反弹方法（碰上下墙、挡板、砖块）
     public void reflectVertical() {
         dy = -dy;
-    }
-
-    //重置小球位置（掉出屏幕后）
-    public void reset(double startx, double starty) {
-        this.x = startx;
-        this.y = starty;
-        this.dx = GameConstant.BALL_SPEED_X;
-        this.dy = GameConstant.BALL_SPEED_Y;
-        this.color = Color.WHITE;
     }
 
     //Getter方法，给其他类访问属性
