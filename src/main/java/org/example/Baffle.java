@@ -1,10 +1,13 @@
 package org.example;
 
+import javafx.scene.paint.Color;
+
 public class Baffle {
     public double x,y;
     public double width;
     public double height;
     public double speed;
+    private Color color;
 
     // 构造方法1:完全自定义挡板属性
     public Baffle(double x, double y, double width, double height, double speed) {
@@ -13,6 +16,7 @@ public class Baffle {
         this.width = width;
         this.height = height;
         this.speed = speed;
+        this.color = Color.web("#BD10E0");
     }
 
     // 构造方法2:使用默认常量创建标准挡板
@@ -37,6 +41,8 @@ public class Baffle {
         } else {
             this.width = GameConstant.BAFFLE_WIDTH * 0.7;
         }
+
+        this.color = getLevelColor(level);
     }
 
     //挡板左右移动
@@ -45,21 +51,31 @@ public class Baffle {
     }
 
     public void moveRight() {
-        if (x + width < GameConstant.GAME_WIDTH - width)
+        if (x + width < GameConstant.GAME_WIDTH)
             x += speed;
     }
 
-    public void moveUp() {
-        if (y > 0) y -= speed;
+    //用鼠标移动挡板
+    public void moveTo(double newX) {
+        this.x = newX;
+        if (this.x < 0) {
+            this.x = 0;
+        }
+        if (this.x + this.width > GameConstant.GAME_WIDTH) {
+            this.x = GameConstant.GAME_WIDTH - this.width;
+        }
     }
 
-    public void moveDown() {
-        if (y + height < GameConstant.GAME_HEIGHT - height)
-            y += speed;
-    }
-
-    //用鼠标移动（期待实现）
-    public void move(String direction) {
+    // 根据关卡获取挡板颜色
+    private Color getLevelColor(int level) {
+        switch (level % 5) {
+            case 0: return Color.web("#BD10E0");
+            case 1: return Color.web("#00D9FF");
+            case 2: return Color.web("#FF6B9D");
+            case 3: return Color.web("#FFD93D");
+            case 4: return Color.web("#6BCF7F");
+            default: return Color.web("#BD10E0");
+        }
     }
 
     //Getter方法，给其他类访问属性
@@ -77,5 +93,17 @@ public class Baffle {
 
     public double getHeight() {
         return height;
+    }
+
+    public double getSpeed() {
+        return speed;
+    }
+
+    public Color getColor() {
+        return color;
+    }
+
+    public void setColor(Color color) {
+        this.color = color;
     }
 }

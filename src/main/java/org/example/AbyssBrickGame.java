@@ -1,11 +1,8 @@
 package org.example;
-//             游戏主类:运行此类使游戏开始
+
 import java.util.ArrayList;
 import java.util.List;
 
-import javafx.scene.paint.Color;
-
-//游戏主入口 + 主循环 + 关卡管理
 public class AbyssBrickGame {
     // 游戏窗口尺寸
     public static final int GAME_WIDTH = GameConstant.GAME_WIDTH;
@@ -21,13 +18,16 @@ public class AbyssBrickGame {
     private int currentLevel;
     private int lifeCount;
     private ScoreManager scoreManager;
+    private LevelManager levelManager;
 
     public AbyssBrickGame() {
         brickList = new ArrayList<>();
         ballList = new ArrayList<>();
         currentLevel = 1;
+        lifeCount = 3;
         gameRunning = true;
         scoreManager = new ScoreManager();
+        levelManager = new LevelManager();
 
         // 初始化游戏、第一关砖块
         initGame();
@@ -39,10 +39,13 @@ public class AbyssBrickGame {
     private void initGame() {
         // 先创建挡板
         double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
-        baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10);
+        baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, currentLevel);
 
-        // 小球放在挡板正上方 15px 位置
-        double ballStartX = baffle.getX() + GameConstant.BAFFLE_WIDTH / 2.0;
+        respawnBallAtPaddle();
+    }
+
+    private void respawnBallAtPaddle() {
+        double ballStartX = baffle.getX() + baffle.getWidth() / 2.0;
         double ballStartY = baffle.getY() - 15;
         Ball ball = new Ball(ballStartX, ballStartY);
         ballList.add(ball);
@@ -51,69 +54,20 @@ public class AbyssBrickGame {
     //根据关卡等级生成砖块
     private void initLevelBrick(int level) {
         brickList.clear();
-
-        int colCount = 10;
-        // 关卡越高行数越多
-        int rowCount = 3 + level / 2;
-
-        double startX = 30;
-        double startY = 40;
-        double brickW = GameConstant.BRICK_WIDTH;
-        double brickH = GameConstant.BRICK_HEIGHT;
-        double gap = 8;
-
-        // 随关卡调整生成概率
-        double normalRate = 0.65;
-        double hardRate = 0.85;
-        if (level == 2) {
-            normalRate = 0.55;
-            hardRate = 0.80;
-        }
-        if (level == 3) {
-            normalRate = 0.45;
-            hardRate = 0.75;
-        }
-
-        for (int row = 0; row < rowCount; row++) {
-            for (int col = 0; col < colCount; col++) {
-                double x = startX + col * (brickW + gap);
-                double y = startY + row * (brickH + gap);
-
-                double rand = Math.random();
-                Brick brick;
-                if (rand < normalRate) {
-                    brick = new NormalBrick(x, y);
-                } else if (rand < hardRate) {
-                    brick = new HardBrick(x, y);
-                } else {
-                    brick = new GiftBrick(x, y);
-                }
-                brickList.add(brick);
-            }
-        }
+        brickList.addAll(levelManager.generateBricks(level));
     }
 
-    //    游戏主循环
-    public void gameLoop() {
-        while (gameRunning) {
-            // 1. 所有小球移动（内部自带墙碰撞）
-            for (Ball ball : ballList) {
-                ball.move();
-            }
-
-            // 2. 统一所有碰撞检测
-            checkAllCollision();
-
-            // 3. 检查游戏胜负、下一关、生命值
-            checkGameStatus();
-
-            // 控制帧率 约60帧
-            try {
-                Thread.sleep(16);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+    public void update() {
+        if (!gameRunning) {
+            return;
         }
+
+        for (Ball ball : ballList) {
+            ball.move();
+        }
+
+        checkAllCollision();
+        checkGameStatus();
     }
 
     //    全部碰撞调度
@@ -147,10 +101,11 @@ public class AbyssBrickGame {
         // 移除已掉落的小球
         ballList.removeIf(ball -> CollisionDetector.isBallFallOut(ball));
 
-        // 所有小球都掉落：游戏结束
-        if (ballList.isEmpty()) {
-            gameRunning = false;
-            scoreManager.resetCombo();
+        if (ballList.isEmpty() && lifeCount > 0) {
+            lifeCount--;
+            if (lifeCount > 0) {
+                respawnBallAtPaddle();
+            }
         }
     }
 
@@ -167,24 +122,46 @@ public class AbyssBrickGame {
 
         // 全部打完 → 下一关
         if (allBrickDead) {
-            currentLevel++;
-            scoreManager.nextLevel();
-            
-            // 清空小球列表
-            ballList.clear();
-            
-            // 重新生成砖块
-            initLevelBrick(currentLevel);
-            
-            // 重新初始化一个小球（和第一关一样的规则）
-            double ballStartX = baffle.getX() + GameConstant.BAFFLE_WIDTH / 2.0;
-            double ballStartY = baffle.getY() - 15;
-            Ball newBall = new Ball(ballStartX, ballStartY);
-            ballList.add(newBall);
+            nextLevel();
+        }
+
+        if (ballList.isEmpty() && lifeCount <= 0) {
+            gameOver();
         }
     }
 
-    // ========== 给组员2 提供getter 用来绘制和键盘控制 ==========
+    private void nextLevel() {
+        currentLevel++;
+        scoreManager.nextLevel();
+        levelManager.initLevelStyle(currentLevel);
+
+        ballList.clear();
+        initLevelBrick(currentLevel);
+        
+        double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
+        baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, currentLevel);
+        
+        respawnBallAtPaddle();
+    }
+
+    private void gameOver() {
+        gameRunning = false;
+        scoreManager.resetCombo();
+    }
+
+    public void restart() {
+        currentLevel = 1;
+        lifeCount = 3;
+        gameRunning = true;
+        scoreManager = new ScoreManager();
+        
+        ballList.clear();
+        brickList.clear();
+        
+        initGame();
+        initLevelBrick(currentLevel);
+    }
+
     public List<Ball> getBallList() {
         return ballList;
     }
@@ -201,8 +178,12 @@ public class AbyssBrickGame {
         return gameRunning;
     }
 
-    public Baffle getGameBaffle() {
-        return baffle;
+    public int getLifeCount() {
+        return lifeCount;
+    }
+
+    public int getCurrentLevel() {
+        return currentLevel;
     }
 
     public ScoreManager getScoreManager() {
