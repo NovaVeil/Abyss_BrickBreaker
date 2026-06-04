@@ -20,12 +20,14 @@ public class AbyssBrickGame {
     private boolean gameRunning;
     private int currentLevel;
     private int lifeCount;
+    private ScoreManager scoreManager;
 
     public AbyssBrickGame() {
         brickList = new ArrayList<>();
         ballList = new ArrayList<>();
         currentLevel = 1;
         gameRunning = true;
+        scoreManager = new ScoreManager();
 
         // 初始化游戏、第一关砖块
         initGame();
@@ -123,13 +125,20 @@ public class AbyssBrickGame {
 
             // 小球 —— 所有砖块碰撞
             for (Brick brick : brickList) {
+                int hpBefore = brick.getHp();
                 CollisionDetector.checkBrickCollision(ball, brick);
+                int hpAfter = brick.getHp();
+
+                // 如果砖块HP减少且变为0，说明刚被击碎，加分
+                if (hpBefore > hpAfter && hpAfter <= 0) {
+                    scoreManager.addScoreForBrick(brick);
+                }
 
                 // 礼物砖块被击碎，触发整行整列扣血
                 if (brick instanceof GiftBrick) {
                     GiftBrick gb = (GiftBrick) brick;
                     if (gb.isTiggerGift()) {
-                        CollisionDetector.triggerGiftSkill(brick, brickList);
+                        CollisionDetector.triggerGiftSkill(brick, brickList, scoreManager);
                     }
                 }
             }
@@ -141,6 +150,7 @@ public class AbyssBrickGame {
         // 所有小球都掉落：游戏结束
         if (ballList.isEmpty()) {
             gameRunning = false;
+            scoreManager.resetCombo();
         }
     }
 
@@ -158,6 +168,7 @@ public class AbyssBrickGame {
         // 全部打完 → 下一关
         if (allBrickDead) {
             currentLevel++;
+            scoreManager.nextLevel();
             
             // 清空小球列表
             ballList.clear();
@@ -192,5 +203,9 @@ public class AbyssBrickGame {
 
     public Baffle getGameBaffle() {
         return baffle;
+    }
+
+    public ScoreManager getScoreManager() {
+        return scoreManager;
     }
 }
