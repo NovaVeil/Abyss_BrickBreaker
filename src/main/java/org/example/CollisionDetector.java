@@ -17,9 +17,39 @@ public class CollisionDetector {
                 && ball.getY() - ball.getRadius() < baffle.getY() + baffle.getHeight();
 
         if (hit) {
-            // 核心：只反向竖直速度，水平速度保留，严格符合物理反射
-            ball.reflectVertical();
-            // 可玩性微调
+            // 判断小球是从上方还是下方撞击挡板
+            double ballBottom = ball.getY() + ball.getRadius();
+            double ballTop = ball.getY() - ball.getRadius();
+            double baffleTop = baffle.getY();
+            double baffleBottom = baffle.getY() + baffle.getHeight();
+            
+            // 计算重叠量
+            double overlapFromTop = ballBottom - baffleTop;
+            double overlapFromBottom = baffleBottom - ballTop;
+            
+            if (overlapFromTop < overlapFromBottom) {
+                // 从上方撞击 - 将小球推到挡板上方
+                ball.setY(baffleTop - ball.getRadius());
+                
+                // 确保向上反弹（强制设置向上的速度）
+                if (ball.getDy() > 0) {
+                    ball.setDy((int) -Math.abs(ball.getDy()));
+                } else if (ball.getDy() == 0) {
+                    ball.setDy(-GameConstant.BALL_SPEED_Y);
+                }
+            } else {
+                // 从下方撞击 - 将小球推到挡板下方
+                ball.setY(baffleBottom + ball.getRadius());
+                
+                // 确保向下反弹（强制设置向下的速度）
+                if (ball.getDy() < 0) {
+                    ball.setDy((int) Math.abs(ball.getDy()));
+                } else if (ball.getDy() == 0) {
+                    ball.setDy(GameConstant.BALL_SPEED_Y);
+                }
+            }
+            
+            // 可玩性微调 - 根据撞击位置调整水平速度
             double bafflieCenter = baffle.getX() + baffle.getWidth() / 2;
             double offset = (ball.getX() - bafflieCenter) / (baffle.getWidth() / 2);
             double tweakFactor = 0.5;
@@ -35,31 +65,56 @@ public class CollisionDetector {
             return false;
         }
 
-        boolean hit = ball.getX() + ball.getRadius() > brick.getX()
-                && ball.getX() - ball.getRadius() < brick.getX() + brick.getWidth()
-                && ball.getY() + ball.getRadius() > brick.getY()
-                && ball.getY() - ball.getRadius() < brick.getY() + brick.getHeight();
+        boolean hit;
+        
+        if (brick.getShape() == Brick.BrickShape.TRIANGLE) {
+            hit = checkTriangleCollision(ball, brick);
+        } else {
+            hit = checkRectangleCollision(ball, brick);
+        }
 
         if (hit) {
-            // 判断是撞在上下边还是左右边
-            double overlapLeft = (ball.getX() + ball.getRadius()) - brick.getX();
-            double overlapRight = (brick.getX() + brick.getWidth()) - (ball.getX() - ball.getRadius());
-            double overlapTop = (ball.getY() + ball.getRadius()) - brick.getY();
-            double overlapBottom = (brick.getY() + brick.getHeight()) - (ball.getY() - ball.getRadius());
-
-            double minOverlap = Math.min(Math.min(overlapLeft, overlapRight), Math.min(overlapTop, overlapBottom));
-
-            if (minOverlap == overlapTop || minOverlap == overlapBottom) {
-                // 撞在上下边 → 竖直反弹
+            if (brick.getShape() == Brick.BrickShape.TRIANGLE) {
                 ball.reflectVertical();
             } else {
-                // 撞在左右边 → 水平反弹
-                ball.reflectHorizontal();
+                double overlapLeft = (ball.getX() + ball.getRadius()) - brick.getX();
+                double overlapRight = (brick.getX() + brick.getWidth()) - (ball.getX() - ball.getRadius());
+                double overlapTop = (ball.getY() + ball.getRadius()) - brick.getY();
+                double overlapBottom = (brick.getY() + brick.getHeight()) - (ball.getY() - ball.getRadius());
+
+                double minOverlap = Math.min(Math.min(overlapLeft, overlapRight), Math.min(overlapTop, overlapBottom));
+
+                if (minOverlap == overlapTop || minOverlap == overlapBottom) {
+                    ball.reflectVertical();
+                } else {
+                    ball.reflectHorizontal();
+                }
             }
 
             brick.isHit();
         }
         return hit;
+    }
+
+    private static boolean checkRectangleCollision(Ball ball, Brick brick) {
+        return ball.getX() + ball.getRadius() > brick.getX()
+                && ball.getX() - ball.getRadius() < brick.getX() + brick.getWidth()
+                && ball.getY() + ball.getRadius() > brick.getY()
+                && ball.getY() - ball.getRadius() < brick.getY() + brick.getHeight();
+    }
+
+    private static boolean checkTriangleCollision(Ball ball, Brick brick) {
+        double x = brick.getX();
+        double y = brick.getY();
+        double w = brick.getWidth();
+        double h = brick.getHeight();
+
+        double centerX = x + w / 2;
+        double centerY = y + h / 2;
+        double distance = Math.sqrt((ball.getX() - centerX) * (ball.getX() - centerX) + 
+                                     (ball.getY() - centerY) * (ball.getY() - centerY));
+
+        return distance < (ball.getRadius() + Math.min(w, h) / 2);
     }
 
     // 判断小球是否掉出底部

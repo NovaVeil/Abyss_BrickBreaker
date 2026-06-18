@@ -100,7 +100,20 @@ public class Ball {
     public void setColor(Color color) {
         this.color = color;
     }
+    
     public void setDx(int dx) {
         this.dx = dx;
+    }
+    
+    public void setDy(int dy) {
+        this.dy = dy;
+    }
+    
+    public void setX(double x) {
+        this.x = x;
+    }
+    
+    public void setY(double y) {
+        this.y = y;
     }
 }

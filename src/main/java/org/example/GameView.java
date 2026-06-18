@@ -23,12 +23,15 @@ public class GameView {
 
     private AbyssBrickGame game;
     private LevelManager levelManager;
+    private GameModeSelector modeSelector;
 
     private AnimationTimer gameLoop;
+    private boolean showingModeSelection;
 
     public GameView(Stage stage) {
         this.primaryStage = stage;
         this.levelManager = new LevelManager();
+        this.showingModeSelection = true;
 
         BorderPane root = new BorderPane();
 
@@ -47,7 +50,7 @@ public class GameView {
 
     private void initGame() {
         game = new AbyssBrickGame();
-        levelManager.initLevelStyle(1);
+        modeSelector = new GameModeSelector(canvas);
     }
 
     private void setupInputHandlers() {
@@ -55,16 +58,10 @@ public class GameView {
 
         scene.setOnKeyPressed(event -> {
             KeyCode code = event.getCode();
-            if (code == KeyCode.LEFT || code == KeyCode.A) {
-                game.getBaffle().moveLeft();
-            }
-            if (code == KeyCode.RIGHT || code == KeyCode.D) {
-                game.getBaffle().moveRight();
-            }
-            if (code == KeyCode.P) {
+            if (code == KeyCode.P && !showingModeSelection) {
                 togglePause();
             }
-            if (code == KeyCode.ESCAPE) {
+            if (code == KeyCode.ESCAPE && !showingModeSelection) {
                 showPauseMenu();
             }
         });
@@ -73,13 +70,25 @@ public class GameView {
         });
 
         canvas.setOnMouseMoved(event -> {
-            double mouseX = event.getX();
-            double paddleNewX = mouseX - game.getBaffle().getWidth() / 2;
-            game.getBaffle().moveTo(paddleNewX);
+            if (showingModeSelection) {
+                modeSelector.handleMouseMove(event.getX(), event.getY());
+            } else {
+                double mouseX = event.getX();
+                // 挡板只在水平方向移动，Y坐标固定在窗口底部
+                double paddleNewX = mouseX - game.getBaffle().getWidth() / 2;
+                double paddleFixedY = GameConstant.GAME_HEIGHT - game.getBaffle().getHeight() - 10;
+                game.getBaffle().moveTo(paddleNewX, paddleFixedY);
+            }
         });
 
         canvas.setOnMouseClicked(event -> {
-            if (!game.isGameRunning()) {
+            if (showingModeSelection) {
+                GameMode selectedMode = modeSelector.handleClick(event.getX(), event.getY());
+                if (selectedMode != null) {
+                    showingModeSelection = false;
+                    game.startWithMode(selectedMode);
+                }
+            } else if (!game.isGameRunning()) {
                 restartGame();
             }
         });
@@ -96,17 +105,52 @@ public class GameView {
     }
 
     private void render() {
+        if (showingModeSelection) {
+            modeSelector.render();
+            return;
+        }
+
         gc.setFill(levelManager.getBackgroundColor());
         gc.fillRect(0, 0, AbyssBrickGame.GAME_WIDTH, AbyssBrickGame.GAME_HEIGHT);
 
         drawBricks();
         drawBaffle();
         drawBalls();
+        drawVirtualBalls();
         drawUI();
+        
+        // 如果正在倒计时，显示倒计时界面
+        if (game.isCountdownActive()) {
+            drawCountdownOverlay();
+        }
 
         if (!game.isGameRunning() && game.getLifeCount() <= 0) {
             drawGameOverOverlay();
         }
+    }
+
+    /**
+     * 绘制倒计时覆盖层
+     */
+    private void drawCountdownOverlay() {
+        // 半透明黑色背景
+        gc.setFill(Color.rgb(0, 0, 0, 0.6));
+        gc.fillRect(0, 0, AbyssBrickGame.GAME_WIDTH, AbyssBrickGame.GAME_HEIGHT);
+        
+        // 倒计时数字
+        gc.setFill(Color.web("#FFD93D"));
+        gc.setFont(Font.font("Microsoft YaHei", 120));
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.fillText(String.valueOf(game.getCountdownSeconds()), 
+                AbyssBrickGame.GAME_WIDTH / 2,
+                AbyssBrickGame.GAME_HEIGHT / 2 + 40);
+        
+        // 提示文字
+        gc.setFill(Color.WHITE);
+        gc.setFont(Font.font("Microsoft YaHei", 24));
+        gc.fillText("准备开始！", 
+                AbyssBrickGame.GAME_WIDTH / 2,
+                AbyssBrickGame.GAME_HEIGHT / 2 + 100);
     }
 
     private void drawBricks() {
@@ -124,28 +168,54 @@ public class GameView {
                 brickColor = Color.web("#F5A623");
             } else if (brick instanceof GiftBrick) {
                 brickColor = Color.web("#7ED321");
+            } else if (brick instanceof TriangleBrick) {
+                brickColor = Color.web("#9B59B6");
             } else {
                 brickColor = Color.WHITE;
             }
 
             gc.setFill(brickColor);
 
-            if (isRectangular) {
-                gc.fillRoundRect(brick.getX(), brick.getY(),
-                        brick.getWidth(), brick.getHeight(), 5, 5);
-                gc.setStroke(Color.WHITE);
-                gc.setLineWidth(1);
-                gc.strokeRoundRect(brick.getX(), brick.getY(),
-                        brick.getWidth(), brick.getHeight(), 5, 5);
+            if (brick.getShape() == Brick.BrickShape.TRIANGLE) {
+                drawTriangle(brick);
             } else {
-                gc.fillRect(brick.getX(), brick.getY(),
-                        brick.getWidth(), brick.getHeight());
-                gc.setStroke(Color.WHITE);
-                gc.setLineWidth(2);
-                gc.strokeRect(brick.getX(), brick.getY(),
-                        brick.getWidth(), brick.getHeight());
+                if (isRectangular) {
+                    gc.fillRoundRect(brick.getX(), brick.getY(),
+                            brick.getWidth(), brick.getHeight(), 5, 5);
+                    gc.setStroke(Color.WHITE);
+                    gc.setLineWidth(1);
+                    gc.strokeRoundRect(brick.getX(), brick.getY(),
+                            brick.getWidth(), brick.getHeight(), 5, 5);
+                } else {
+                    gc.fillRect(brick.getX(), brick.getY(),
+                            brick.getWidth(), brick.getHeight());
+                    gc.setStroke(Color.WHITE);
+                    gc.setLineWidth(2);
+                    gc.strokeRect(brick.getX(), brick.getY(),
+                            brick.getWidth(), brick.getHeight());
+                }
             }
         }
+    }
+
+    private void drawTriangle(Brick brick) {
+        double x = brick.getX();
+        double y = brick.getY();
+        double w = brick.getWidth();
+        double h = brick.getHeight();
+
+        gc.beginPath();
+        gc.moveTo(x + w / 2, y);
+        gc.lineTo(x + w, y + h);
+        gc.lineTo(x, y + h);
+        gc.closePath();
+
+        gc.setFill(gc.getFill());
+        gc.fill();
+
+        gc.setStroke(Color.WHITE);
+        gc.setLineWidth(2);
+        gc.stroke();
     }
 
     private void drawBaffle() {
@@ -175,6 +245,36 @@ public class GameView {
         }
     }
 
+    private void drawVirtualBalls() {
+        for (VirtualBall virtualBall : game.getVirtualBallList()) {
+            if (!virtualBall.isActive()) {
+                continue;
+            }
+            
+            // 绘制半透明的虚拟小球
+            gc.setFill(virtualBall.getColor());
+            gc.fillOval(virtualBall.getX() - virtualBall.getRadius(),
+                    virtualBall.getY() - virtualBall.getRadius(),
+                    virtualBall.getRadius() * 2, virtualBall.getRadius() * 2);
+
+            // 绘制虚线边框
+            gc.setStroke(Color.WHITE);
+            gc.setLineWidth(2);
+            gc.setLineDashes(5, 5);
+            gc.strokeOval(virtualBall.getX() - virtualBall.getRadius(),
+                    virtualBall.getY() - virtualBall.getRadius(),
+                    virtualBall.getRadius() * 2, virtualBall.getRadius() * 2);
+            gc.setLineDashes(0);
+            
+            // 绘制发光效果
+            gc.setStroke(Color.web("#FF6B9D", 0.3));
+            gc.setLineWidth(4);
+            gc.strokeOval(virtualBall.getX() - virtualBall.getRadius() - 3,
+                    virtualBall.getY() - virtualBall.getRadius() - 3,
+                    virtualBall.getRadius() * 2 + 6, virtualBall.getRadius() * 2 + 6);
+        }
+    }
+
     private void drawUI() {
         ScoreManager scoreManager = game.getScoreManager();
 
@@ -193,8 +293,8 @@ public class GameView {
 
         gc.setTextAlign(TextAlignment.CENTER);
         gc.setFont(Font.font("Microsoft YaHei", 14));
-        gc.fillText("方向键←→/AD移动 | 鼠标控制 | P暂停 | ESC菜单",
-                AbyssBrickGame.GAME_WIDTH / 2, AbyssBrickGame.GAME_HEIGHT - 10);
+        gc.fillText("鼠标移动挡板 | P暂停 | ESC菜单",
+                AbyssBrickGame.GAME_WIDTH / 2.0, AbyssBrickGame.GAME_HEIGHT - 10);
     }
 
     private void drawGameOverOverlay() {
@@ -204,21 +304,21 @@ public class GameView {
         gc.setFill(Color.RED);
         gc.setFont(Font.font("Microsoft YaHei", 48));
         gc.setTextAlign(TextAlignment.CENTER);
-        gc.fillText("游戏结束", AbyssBrickGame.GAME_WIDTH / 2,
-                AbyssBrickGame.GAME_HEIGHT / 2 - 80);
+        gc.fillText("游戏结束", AbyssBrickGame.GAME_WIDTH / 2.0,
+                AbyssBrickGame.GAME_HEIGHT / 2.0 - 80);
 
         gc.setFill(Color.WHITE);
         gc.setFont(Font.font("Microsoft YaHei", 24));
         gc.fillText("最终分数: " + game.getScoreManager().getScoreValue(),
-                AbyssBrickGame.GAME_WIDTH / 2,
-                AbyssBrickGame.GAME_HEIGHT / 2 - 20);
+                AbyssBrickGame.GAME_WIDTH / 2.0,
+                AbyssBrickGame.GAME_HEIGHT / 2.0 - 20);
         gc.fillText("到达关卡: " + game.getCurrentLevel(),
-                AbyssBrickGame.GAME_WIDTH / 2,
-                AbyssBrickGame.GAME_HEIGHT / 2 + 20);
+                AbyssBrickGame.GAME_WIDTH / 2.0,
+                AbyssBrickGame.GAME_HEIGHT / 2.0 + 20);
 
         gc.setFont(Font.font("Microsoft YaHei", 18));
-        gc.fillText("点击鼠标重新开始", AbyssBrickGame.GAME_WIDTH / 2,
-                AbyssBrickGame.GAME_HEIGHT / 2 + 70);
+        gc.fillText("点击鼠标重新开始", AbyssBrickGame.GAME_WIDTH / 2.0,
+                AbyssBrickGame.GAME_HEIGHT / 2.0 + 70);
     }
 
     private void centerWindow() {

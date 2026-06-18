@@ -5,6 +5,13 @@ public abstract class Brick {
     protected double x, y;
     protected double width, height;
     protected int hp;
+    protected BrickShape shape;
+
+    // 砖块形状枚举
+    public enum BrickShape {
+        RECTANGLE,    // 矩形（默认）
+        TRIANGLE      // 三角形
+    }
 
     //：构造方法：创建砖块
     public Brick(double x, double y, int hp) {
@@ -13,6 +20,7 @@ public abstract class Brick {
         this.width = GameConstant.BRICK_WIDTH;
         this.height = GameConstant.BRICK_HEIGHT;
         this.hp = hp;
+        this.shape = BrickShape.RECTANGLE; // 默认为矩形
     }
 
     //普通方法：砖块被击中后生命值减一
@@ -44,5 +52,13 @@ public abstract class Brick {
 
     public int getHp() {
         return hp;
+    }
+
+    public BrickShape getShape() {
+        return shape;
+    }
+
+    public void setShape(BrickShape shape) {
+        this.shape = shape;
     }
 }

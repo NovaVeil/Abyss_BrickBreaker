@@ -39,6 +39,10 @@ public class ScoreManager {
         }
     }
 
+    public void addScore(int points) {
+        score.set(score.get() + points);
+    }
+
     private int getBaseScore(Brick brick) {
         if (brick instanceof GiftBrick) {
             return GIFT_BRICK_SCORE;
