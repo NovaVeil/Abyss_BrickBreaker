@@ -23,7 +23,7 @@ public class Baffle {
     public Baffle(double x, double y) {
         this(x, y, GameConstant.BAFFLE_WIDTH,
                 GameConstant.BAFFLE_HEIGHT,
-                GameConstant.BAFFLe_SPEED);
+                GameConstant.BAFFLE_SPEED);
     }
 
     // 构造方法3:根据关卡难度调整挡板大小
@@ -31,7 +31,7 @@ public class Baffle {
         this.x = x;
         this.y = y;
         this.height = GameConstant.BAFFLE_HEIGHT;  // 高度固定
-        this.speed = GameConstant.BAFFLe_SPEED;     // 速度固定
+        this.speed = GameConstant.BAFFLE_SPEED;     // 速度固定
 
         // 根据关卡难度调整挡板宽度(关卡越高,挡板越窄)
         if (level <= 3) {
@@ -55,20 +55,9 @@ public class Baffle {
             x += speed;
     }
 
-    //挡板上移下移
-    public void moveUp() {
-        if (y > 0) y -= speed;
-    }
-
-    public void moveDown() {
-        if (y + height < GameConstant.GAME_HEIGHT)
-            y += speed;
-    }
-
-    //用鼠标移动挡板（支持XY平面移动）
+    //用鼠标移动挡板（仅水平移动）
     public void moveTo(double newX, double newY) {
         this.x = newX;
-        this.y = newY;
         
         // 边界检查 - 左边界
         if (this.x < 0) {
@@ -77,14 +66,6 @@ public class Baffle {
         // 右边界
         if (this.x + this.width > GameConstant.GAME_WIDTH) {
             this.x = GameConstant.GAME_WIDTH - this.width;
-        }
-        // 上边界
-        if (this.y < 0) {
-            this.y = 0;
-        }
-        // 下边界
-        if (this.y + this.height > GameConstant.GAME_HEIGHT) {
-            this.y = GameConstant.GAME_HEIGHT - this.height;
         }
     }
 

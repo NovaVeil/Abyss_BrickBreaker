@@ -128,10 +128,7 @@ public class GameView {
             drawGameOverOverlay();
         }
     }
-
-    /**
-     * 绘制倒计时覆盖层
-     */
+    //绘制倒计时覆盖层
     private void drawCountdownOverlay() {
         // 半透明黑色背景
         gc.setFill(Color.rgb(0, 0, 0, 0.6));
@@ -142,15 +139,15 @@ public class GameView {
         gc.setFont(Font.font("Microsoft YaHei", 120));
         gc.setTextAlign(TextAlignment.CENTER);
         gc.fillText(String.valueOf(game.getCountdownSeconds()), 
-                AbyssBrickGame.GAME_WIDTH / 2,
-                AbyssBrickGame.GAME_HEIGHT / 2 + 40);
+                AbyssBrickGame.GAME_WIDTH / 2.0,
+                AbyssBrickGame.GAME_HEIGHT / 2.0 + 40);
         
         // 提示文字
         gc.setFill(Color.WHITE);
         gc.setFont(Font.font("Microsoft YaHei", 24));
         gc.fillText("准备开始！", 
-                AbyssBrickGame.GAME_WIDTH / 2,
-                AbyssBrickGame.GAME_HEIGHT / 2 + 100);
+                AbyssBrickGame.GAME_WIDTH / 2.0,
+                AbyssBrickGame.GAME_HEIGHT / 2.0 + 100);
     }
 
     private void drawBricks() {
@@ -380,5 +377,12 @@ public class GameView {
         primaryStage.show();
         canvas.requestFocus();
         gameLoop.start();
+        
+        // 窗口关闭时停止游戏循环（为数据记录预留时间）
+        primaryStage.setOnCloseRequest(event -> {
+            gameLoop.stop();
+            // TODO: 这里可以调用数据保存方法
+            // DataManager.saveGameData(game);
+        });
     }
 }

@@ -38,26 +38,27 @@ public class GameModeSelector {
         double centerX = GameConstant.GAME_WIDTH / 2.0;
         double centerY = GameConstant.GAME_HEIGHT / 2.0;
         
-        double campaignX = centerX - BUTTON_WIDTH - BUTTON_GAP / 2;
-        double campaignY = centerY - BUTTON_HEIGHT / 2;
+        double campaignX = centerX - BUTTON_WIDTH - BUTTON_GAP / 2.0;
+        double campaignY = centerY - BUTTON_HEIGHT / 2.0;
         
-        double endlessX = centerX + BUTTON_GAP / 2;
-        double endlessY = centerY - BUTTON_HEIGHT / 2;
+        double endlessX = centerX + BUTTON_GAP / 2.0;
+        double endlessY = centerY - BUTTON_HEIGHT / 2.0;
         
         this.campaignButton = new ModeButton(campaignX, campaignY, BUTTON_WIDTH, BUTTON_HEIGHT, GameMode.CAMPAIGN);
         this.endlessButton = new ModeButton(endlessX, endlessY, BUTTON_WIDTH, BUTTON_HEIGHT, GameMode.ENDLESS);
     }
     
-    private void loadBackgroundImage() {
-        try {
-            InputStream stream = getClass().getResourceAsStream("/bgm.mp3");
-            if (stream != null) {
-                this.backgroundImage = null;
-            }
-        } catch (Exception e) {
-            this.backgroundImage = null;
+   private void loadBackgroundImage() {
+    try {
+        Image img = new Image(getClass().getResourceAsStream("/mode_select_bg.png"));
+        if (!img.isError()) {
+            this.backgroundImage = img;
         }
+    } catch (Exception e) {
+        this.backgroundImage = null;  // 使用默认背景色
     }
+}
+
     
     public void render() {
         if (backgroundImage != null) {

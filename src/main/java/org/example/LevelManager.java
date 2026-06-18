@@ -66,28 +66,27 @@ public class LevelManager {
         }
     }
 
-    /**
-     * 设置当前游戏模式
-     * @param mode 游戏模式
-     */
+
+   /* 设置当前游戏模式
+    @param mode 游戏模式*/
+
     public void setGameMode(GameMode mode) {
         this.currentMode = mode;
     }
 
-    /**
-     * 获取当前游戏模式
-     * @return 当前游戏模式
-     */
+
+    /*获取当前游戏模式
+    @return 当前游戏模式*/
+
     public GameMode getCurrentMode() {
         return currentMode;
     }
 
-    /**
-     * 生成指定关卡的砖块列表（根据游戏模式自动选择生成策略）
-     * 
-     * @param level 关卡编号
-     * @return 生成的砖块列表
-     */
+
+    /*生成指定关卡的砖块列表（根据游戏模式自动选择生成策略）
+    @param level 关卡编号
+    @return 生成的砖块列表*/
+
     public List<Brick> generateBricks(int level) {
         if (currentMode == GameMode.ENDLESS) {
             return generateEndlessBricks(level);
@@ -96,9 +95,9 @@ public class LevelManager {
         }
     }
 
-    /**
-     * 闯关模式：生成图形化砖块布局
-     */
+
+     //闯关模式：生成图形化砖块布局
+
     private List<Brick> generateCampaignBricks(int level) {
         switch (level % 5) {
             case 1:
@@ -115,10 +114,8 @@ public class LevelManager {
                 return generateHeartPatternBricks(level);
         }
     }
+    //无尽模式：生成高密度随机砖块
 
-    /**
-     * 无尽模式：生成高密度随机砖块
-     */
     private List<Brick> generateEndlessBricks(int level) {
         List<Brick> bricks = new ArrayList<>();
 
@@ -186,10 +183,7 @@ public class LevelManager {
 
         return bricks;
     }
-
-    /**
-     * 生成圆形图案
-     */
+  //生成圆形图案
     public List<Brick> generateCirclePatternBricks(int level) {
         List<Brick> bricks = new ArrayList<>();
         
@@ -237,10 +231,7 @@ public class LevelManager {
         
         return bricks;
     }
-
-    /**
-     * 生成星形图案
-     */
+    //生成星形图案
     public List<Brick> generateStarPatternBricks(int level) {
         List<Brick> bricks = new ArrayList<>();
         
@@ -285,13 +276,9 @@ public class LevelManager {
         
         return bricks;
     }
-
-    /**
-     * 生成爱心形状的砖块布局
-     * 
-     * @param level 关卡编号
-     * @return 爱心形状的砖块列表
-     */
+  /* 生成爱心形状的砖块布局
+   @param level 关卡编号
+   @return 爱心形状的砖块列表*/
     public List<Brick> generateHeartPatternBricks(int level) {
         List<Brick> bricks = new ArrayList<>();
         
@@ -300,15 +287,13 @@ public class LevelManager {
         double brickW = GameConstant.BRICK_WIDTH;
         double brickH = GameConstant.BRICK_HEIGHT;
         double gap = 8;
-        
-        // 爱心图案设计（使用网格坐标）
-        // 第1行：   X X     X X
-        // 第2行： X X X X X X X
-        // 第3行： X X X X X X X
-        // 第4行：   X X X X X
-        // 第5行：     X X X
-        // 第6行：       X
-        
+       /* 爱心图案设计（使用网格坐标）
+        第1行：   X X     X X
+        第2行： X X X X X X X
+        第3行： X X X X X X X
+        第4行：   X X X X X
+        第5行：     X X X
+        第6行：       X*/
         int[][] heartPattern = {
             {0, 1, 0, 0, 1, 0, 0},  // 第1行
             {1, 1, 1, 1, 1, 1, 1},  // 第2行
@@ -352,14 +337,10 @@ public class LevelManager {
         
         return bricks;
     }
-
-    /**
-     * 生成自定义图形砖块（支持多种图案）
-     * 
-     * @param level 关卡编号
-     * @param patternType 图案类型 ("heart", "diamond", "arrow")
-     * @return 图形砖块列表
-     */
+    /*生成自定义图形砖块（支持多种图案）
+    @param level 关卡编号
+    @param patternType 图案类型 ("heart", "diamond", "arrow")
+    @return 图形砖块列表*/
     public List<Brick> generatePatternBricks(int level, String patternType) {
         switch (patternType.toLowerCase()) {
             case "heart":
@@ -372,10 +353,7 @@ public class LevelManager {
                 return generateBricks(level);
         }
     }
-
-    /**
-     * 生成菱形图案
-     */
+    //生成菱形图案
     public List<Brick> generateDiamondPatternBricks(int level) {
         List<Brick> bricks = new ArrayList<>();
         
@@ -414,10 +392,7 @@ public class LevelManager {
         
         return bricks;
     }
-
-    /**
-     * 生成箭头图案
-     */
+    //生成箭头图案
     public List<Brick> generateArrowPatternBricks(int level) {
         List<Brick> bricks = new ArrayList<>();
         
@@ -449,15 +424,11 @@ public class LevelManager {
         
         return bricks;
     }
-
-    /**
-     * 生成虚拟小球
-     * 在砖块间隙处放置，数量随关卡递增
-     * 
-     * @param level 关卡编号
-     * @param brickList 砖块列表（用于避开砖块位置）
-     * @return 虚拟小球列表
-     */
+    /*生成虚拟小球
+    在砖块间隙处放置，数量随关卡递增
+    @param level 关卡编号
+    @param brickList 砖块列表（用于避开砖块位置）
+    @return 虚拟小球列表*/
     public List<VirtualBall> generateVirtualBalls(int level, List<Brick> brickList) {
         virtualBalls.clear();
         
@@ -573,45 +544,38 @@ public class LevelManager {
         return virtualBalls;
     }
 
-    /**
-     * 获取虚拟小球列表
-     */
+    //获取虚拟小球列表
     public List<VirtualBall> getVirtualBalls() {
         return virtualBalls;
     }
 
 
-//    获取当前关卡的背景颜色
+   //获取当前关卡的背景颜色
 
     public Color getBackgroundColor() {
         return backgroundColor;
     }
-//    获取当前关卡的小球颜色
+  //获取当前关卡的小球颜色
     public Color getBallColor() {
         return ballColor;
     }
 
-//    获取当前关卡的砖块颜色
+  //获取当前关卡的砖块颜色
     public Color getBrickStyle() {
         return brickStyle;
     }
-//    判断当前关卡是否使用矩形砖块
+  //判断当前关卡是否使用矩形砖块
     public boolean isRectangularBricks() {
         return isRectangularBricks;
     }
-
-    /**
-     * 获取当前关卡编号
-     */
+    //获取当前关卡编号
     public int getCurrentLevel() {
         return currentLevel;
     }
 
-    /**
-     * 获取当前关卡的主题名称（用于UI显示）
-     *
-     * @return 主题名称字符串
-     */
+
+ //获取当前关卡的主题名称（用于UI显示）@return 主题名称字符串
+
     public String getLevelThemeName() {
         if (currentMode == GameMode.ENDLESS) {
             return "无尽关卡 " + currentLevel;

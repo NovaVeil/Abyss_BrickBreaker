@@ -45,10 +45,7 @@ public class AbyssBrickGame {
         double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
         baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, currentLevel);
     }
-
-    /**
-     * 设置游戏模式并开始游戏
-     */
+    //设置游戏模式并开始游戏
     public void startWithMode(GameMode mode) {
         this.currentMode = mode;
         this.modeSelected = true;
@@ -58,19 +55,14 @@ public class AbyssBrickGame {
         startCountdown();
     }
 
-    /**
-     * 开始3秒倒计时
-     */
+   // 开始3秒倒计时
     public void startCountdown() {
         countdownActive = true;
         countdownSeconds = 3;
         lastCountdownTime = System.currentTimeMillis();
         gameRunning = false;
     }
-
-    /**
-     * 更新倒计时
-     */
+    //更新倒计时
     private void updateCountdown() {
         if (!countdownActive) {
             return;
@@ -167,11 +159,8 @@ public class AbyssBrickGame {
             }
         }
     }
-
-    /**
-     * 检测实体小球与虚拟小球的碰撞
-     * 碰撞后在虚拟小球位置生成新的实体小球
-     */
+   /*检测实体小球与虚拟小球的碰撞
+   碰撞后在虚拟小球位置生成新的实体小球*/
     private void checkVirtualBallCollision(Ball realBall) {
         Iterator<VirtualBall> virtualIterator = virtualBallList.iterator();
         while (virtualIterator.hasNext()) {
