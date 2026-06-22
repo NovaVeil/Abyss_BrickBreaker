@@ -5,6 +5,9 @@ import java.util.Iterator;
 import java.util.List;
 
 public class AbyssBrickGame {
+    // 音频管理器
+    private final AudioManager audioManager = AudioManager.getInstance();
+
     // 游戏窗口尺寸
     public static final int GAME_WIDTH = GameConstant.GAME_WIDTH;
     public static final int GAME_HEIGHT = GameConstant.GAME_HEIGHT;
@@ -45,6 +48,9 @@ public class AbyssBrickGame {
         // 初始化挡板
         double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
         baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, currentLevel);
+
+        //播放背景音乐
+        audioManager.playBGM();
     }
     //设置游戏模式并开始游戏
     public void startWithMode(GameMode mode) {
@@ -241,6 +247,9 @@ public class AbyssBrickGame {
         
         double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
         baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, currentLevel);
+
+        // 播放通关音效
+        AudioManager.getInstance().playLevelUpSound();
         
         // 下一关也需要倒计时
         startCountdown();
@@ -250,6 +259,11 @@ public class AbyssBrickGame {
         gameRunning = false;
         scoreManager.resetCombo();
         countdownActive = false;
+
+        // 停止 BGM + 播放失败音效
+        AudioManager.getInstance().stopBGM();
+        AudioManager.getInstance().playGameLoseSound();
+
         ballList.clear();
         virtualBallList.clear();
         brickList.clear();
