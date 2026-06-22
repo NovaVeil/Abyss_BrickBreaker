@@ -2,6 +2,8 @@ package org.example;
 
 import javafx.scene.media.AudioClip;
 
+import javax.sound.sampled.*;
+
 import java.net.URL;
 
 /**
@@ -29,9 +31,10 @@ public class AudioManager {
 
     /**
      * 获取单例实例
+     *
      * @return AudioManager 的唯一实例
      */
-    public static AudioManager getInstance() {
+    public static synchronized AudioManager getInstance() {
         if (instance == null) {
             instance = new AudioManager();
         }
@@ -43,38 +46,43 @@ public class AudioManager {
      */
     private void loadSounds() {
         // 使用 getClass().getResource() 来获取 resources 下的文件路径
-        URL bgmUrl = getClass().getResource("/bgm.mp3");
-        URL hitUrl = getClass().getResource("/hit.wav");
-        URL levelUpUrl = getClass().getResource("/level_up.wav");
-        URL game_loseUrl = getClass().getResource("/game_lose.mp3");
+        try {
+            URL bgmUrl = getClass().getResource("/bgm.mp3");
+            URL hitUrl = getClass().getResource("/hit.wav");
+            URL levelUpUrl = getClass().getResource("/level_up.wav");
+            URL game_loseUrl = getClass().getResource("/game_lose.mp3");
 
-        if (bgmUrl != null) {
-            bgmClip = new AudioClip(bgmUrl.toString());
-            bgmClip.setCycleCount(AudioClip.INDEFINITE); // 设置为无限循环
-            bgmClip.setVolume(0.3); // 背景音乐音量调低一点
-        } else {
-            System.err.println("错误：找不到背景音乐文件 bgm.mp3");
-        }
+            if (bgmUrl != null) {
+                bgmClip = new AudioClip(bgmUrl.toString());
+                bgmClip.setCycleCount(AudioClip.INDEFINITE); // 设置为无限循环
+                bgmClip.setVolume(0.3); // 背景音乐音量调低一点
+            } else {
+                throw new RuntimeException("错误：找不到背景音乐文件 bgm.mp3");
+            }
 
-        if (hitUrl != null) {
-            hitClip = new AudioClip(hitUrl.toString());
-            hitClip.setVolume(0.6);
-        } else {
-            System.err.println("错误：找不到撞击音效文件 hit.wav");
-        }
+            if (hitUrl != null) {
+                hitClip = new AudioClip(hitUrl.toString());
+                hitClip.setVolume(0.6);
+            } else {
+                throw new RuntimeException("错误：找不到撞击音效文件 hit.wav");
+            }
 
-        if (levelUpUrl != null) {
-            levelUpClip = new AudioClip(levelUpUrl.toString());
-            levelUpClip.setVolume(0.8);
-        } else {
-            System.err.println("错误：找不到通关音效文件 level_up.wav");
-        }
+            if (levelUpUrl != null) {
+                levelUpClip = new AudioClip(levelUpUrl.toString());
+                levelUpClip.setVolume(0.8);
+            } else {
+                throw new RuntimeException("错误：找不到通关音效文件 level_up.wav");
+            }
 
-        if (game_loseUrl != null) {
-            game_loseClip = new AudioClip(game_loseUrl.toString());
-            game_loseClip.setVolume(0.8);
-        } else {
-            System.err.println("错误：找不到游戏结束音效文件 game_lose.mp3");
+            if (game_loseUrl != null) {
+                game_loseClip = new AudioClip(game_loseUrl.toString());
+                game_loseClip.setVolume(0.8);
+            } else {
+                throw new RuntimeException("错误：找不到游戏结束音效文件 game_lose.mp3");
+            }
+        } catch (Exception e) {
+            System.err.println("错误：加载音效文件失败" + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -84,7 +92,7 @@ public class AudioManager {
      * 播放背景音乐
      */
     public void playBGM() {
-        if (bgmClip != null && !bgmClip.isPlaying())  {
+        if (bgmClip != null && !bgmClip.isPlaying()) {
             bgmClip.play();
         }
     }
@@ -125,4 +133,13 @@ public class AudioManager {
             game_loseClip.play();
         }
     }
+
+    public void dispose() {
+        if (bgmClip != null) {
+            bgmClip.stop();
+        }
+        // 其他音频资源清理...
+        instance = null;
+    }
+
 }

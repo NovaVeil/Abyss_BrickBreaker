@@ -116,6 +116,9 @@ public class AbyssBrickGame {
 
     public void update() {
         // 更新倒计时
+        if (lifeCount <= 0) {
+            return;
+        }
         try {
             updateCountdown();
             if (!gameRunning) {
@@ -259,15 +262,13 @@ public class AbyssBrickGame {
         gameRunning = false;
         scoreManager.resetCombo();
         countdownActive = false;
-
-        // 停止 BGM + 播放失败音效
-        AudioManager.getInstance().stopBGM();
+        AudioManager.getInstance().stopBGM();// 停止 BGM + 播放失败音效
         AudioManager.getInstance().playGameLoseSound();
-
         ballList.clear();
         virtualBallList.clear();
         brickList.clear();
         aliveBrickCount = 0;
+        lifeCount = 0;
     }
    //重新开始的方法
     public void restart() {
