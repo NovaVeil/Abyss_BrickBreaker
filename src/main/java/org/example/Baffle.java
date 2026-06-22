@@ -55,7 +55,7 @@ public class Baffle {
             x += speed;
     }
 
-    //用鼠标移动挡板（仅水平移动）
+    //移动挡板方法（仅水平移动）
     public void moveTo(double newX, double newY) {
         this.x = newX;
         

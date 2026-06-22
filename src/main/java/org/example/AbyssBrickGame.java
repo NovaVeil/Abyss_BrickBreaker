@@ -33,7 +33,7 @@ public class AbyssBrickGame {
         ballList = new ArrayList<>();
         virtualBallList = new ArrayList<>();
         currentLevel = 1;
-        lifeCount = GameConstant.BAFFLE_HEIGHT;
+        lifeCount = GameConstant.LIVES_COUNT;
         gameRunning = false;
         countdownActive = false;
         countdownSeconds = 3;
@@ -131,6 +131,7 @@ public class AbyssBrickGame {
     //    全部碰撞调度
     private void checkAllCollision() {
         // 遍历所有小球进行碰撞检测
+        List<Ball> ballsToAdd = new ArrayList<>();
         Iterator<Ball> ballIterator = ballList.iterator();
         while (ballIterator.hasNext()) {
             Ball ball = ballIterator.next();
@@ -161,11 +162,17 @@ public class AbyssBrickGame {
             }
             
             // 小球 —— 虚拟小球碰撞检测
-            checkVirtualBallCollision(ball);
+            List<Ball> newBalls = checkVirtualBallCollision(ball);
+            if (newBalls != null && !newBalls.isEmpty()) {
+                ballsToAdd.addAll(newBalls);
+            }
         }
 
         // 移除已掉落的小球
         ballList.removeIf(ball -> CollisionDetector.isBallFallOut(ball));
+
+        // 添加新生成的小球
+        ballList.addAll(ballsToAdd);
 
         if (ballList.isEmpty() && lifeCount > 0) {
             lifeCount--;
@@ -180,10 +187,10 @@ public class AbyssBrickGame {
         aliveBrickCount--;
     }
    //检测实体小球与虚拟小球的碰撞,碰撞后在虚拟小球位置生成新的实体小球
-    private void checkVirtualBallCollision(Ball realBall) {
-        Iterator<VirtualBall> virtualIterator = virtualBallList.iterator();
-        while (virtualIterator.hasNext()) {
-            VirtualBall virtualBall = virtualIterator.next();
+    private List<Ball> checkVirtualBallCollision(Ball realBall) {
+        List<VirtualBall> toRemove = new ArrayList<>();
+        List<Ball> toAdd = new ArrayList<>();
+        for (VirtualBall virtualBall : virtualBallList) {
             if (!virtualBall.isActive()) {
                 continue;
             }
@@ -200,19 +207,20 @@ public class AbyssBrickGame {
                 
                 // 随机设置新球的方向
                 int newDx = (Math.random() > 0.5 ? 1 : -1) * GameConstant.BALL_SPEED_X;
-                int newDy = -GameConstant.BALL_SPEED_Y; // 向上
+                newBall.setDy(-GameConstant.BALL_SPEED_Y); // 向上
                 newBall.setDx(newDx);
-                
-                ballList.add(newBall);
-                
+
+                toAdd.add(newBall);
                 // 停用虚拟小球
                 virtualBall.deactivate();
-                virtualIterator.remove();
+                toRemove.add(virtualBall);
                 
                 // 加分
                 scoreManager.addScore(50);
             }
         }
+        virtualBallList.removeAll(toRemove);
+        return toAdd;
     }
 
     //    当一个关卡中的砖块都被击碎，进入下一关
