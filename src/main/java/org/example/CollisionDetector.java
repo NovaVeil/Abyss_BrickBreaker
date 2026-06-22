@@ -59,7 +59,7 @@ public class CollisionDetector {
         return hit;
     }
 
-    // 小球 碰 砖块（优化版，分边反弹）
+    // 小球 碰 砖块（分边反弹）
     public static boolean checkBrickCollision(Ball ball, Brick brick) {
         if (!brick.isAlive()) {
             return false;
@@ -122,7 +122,7 @@ public class CollisionDetector {
         return ball.getY() - ball.getRadius() > GameConstant.GAME_HEIGHT;
     }
 //    礼物砖道具功能：对相对应的giftbrick的同一行和同一列所有存活砖块血量-1
-    public static void triggerGiftSkill(Brick giftBrick, List<Brick> allBricks, ScoreManager scoreManager) {
+    public static void triggerGiftSkill(Brick giftBrick, List<Brick> allBricks, ScoreManager scoreManager,AbyssBrickGame game) {
         double targetX = giftBrick.getX();
         double targetY = giftBrick.getY();
 
@@ -140,6 +140,7 @@ public class CollisionDetector {
                 // 如果连锁击杀，立即计分
                 if (!b.isAlive()) {
                     scoreManager.addScoreForBrick(b);
+                    game.decrementAliveBrickCount();
                 }
             }
         }

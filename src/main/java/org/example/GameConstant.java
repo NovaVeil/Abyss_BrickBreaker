@@ -20,7 +20,7 @@ public class GameConstant {
     public static final int BRICK_WIDTH = 30;
     public static final int BRICK_HEIGHT = 20;
     //
-
+    public static final int LIVES_COUNT = 3;
     public static final double BRICK_GAP = 8.0;
     public static final int CAMPAIGN_BRICK_COLS = 10;
     public static final int ENDLESS_BRICK_COLS_BASE = 14;
