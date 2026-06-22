@@ -55,6 +55,8 @@ public class CollisionDetector {
             double tweakFactor = 0.5;
             int newDx = (int) (ball.getDx() + offset * 3 * tweakFactor);
             ball.setDx(newDx);
+
+            AudioManager.getInstance().playHitSound();
         }
         return hit;
     }
@@ -89,6 +91,8 @@ public class CollisionDetector {
                 } else {
                     ball.reflectHorizontal();
                 }
+
+                AudioManager.getInstance().playHitSound();
             }
 
             brick.isHit();
