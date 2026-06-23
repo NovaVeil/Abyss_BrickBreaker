@@ -91,7 +91,10 @@ public class GameView {
                     game.startWithMode(selectedMode);
                 }
             } else if (!game.isGameRunning()) {
-                restartGame();
+                // 关键修复：先重置游戏内部状态（清除上一局的 lifeCount=0 等死亡标记）
+                game.restart();
+                // 再显示模式选择界面
+                showingModeSelection = true;
             }
         });
     }
@@ -313,13 +316,11 @@ public class GameView {
     private void drawGameOverOverlay() {
         gc.setFill(Color.rgb(0, 0, 0, 0.8));
         gc.fillRect(0, 0, AbyssBrickGame.GAME_WIDTH, AbyssBrickGame.GAME_HEIGHT);
-
         gc.setFill(Color.RED);
         gc.setFont(Font.font("Microsoft YaHei", 48));
         gc.setTextAlign(TextAlignment.CENTER);
         gc.fillText("游戏结束", AbyssBrickGame.GAME_WIDTH / 2.0,
                 AbyssBrickGame.GAME_HEIGHT / 2.0 - 80);
-
         gc.setFill(Color.WHITE);
         gc.setFont(Font.font("Microsoft YaHei", 24));
         gc.fillText("最终分数: " + game.getScoreManager().getScoreValue(),
@@ -328,9 +329,8 @@ public class GameView {
         gc.fillText("到达关卡: " + game.getCurrentLevel(),
                 AbyssBrickGame.GAME_WIDTH / 2.0,
                 AbyssBrickGame.GAME_HEIGHT / 2.0 + 20);
-
         gc.setFont(Font.font("Microsoft YaHei", 18));
-        gc.fillText("点击鼠标重新开始", AbyssBrickGame.GAME_WIDTH / 2.0,
+        gc.fillText("点击鼠标返回模式选择界面", AbyssBrickGame.GAME_WIDTH / 2.0,
                 AbyssBrickGame.GAME_HEIGHT / 2.0 + 70);
     }
 
@@ -369,7 +369,7 @@ public class GameView {
         Optional<ButtonType> result = alert.showAndWait();
 
         if (result.isPresent() && result.get() == restartButton) {
-            restartGame();
+            game.restart(); showingModeSelection = true;
         } else if (result.isPresent() && result.get() == exitButton) {
             primaryStage.close();
         }
@@ -384,10 +384,7 @@ public class GameView {
         alert.showAndWait();
     }
 
-    private void restartGame() {
-        game.restart();
-        levelManager.initLevelStyle(1);
-    }
+
 
     public void show() {
         primaryStage.show();
