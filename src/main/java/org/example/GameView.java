@@ -14,6 +14,8 @@ import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 
 import java.util.Optional;
+import org.example.ImageLoader;
+import org.example.ThemeType;
 
 public class GameView {
     private Stage primaryStage;
@@ -110,8 +112,22 @@ public class GameView {
             return;
         }
 
-        gc.setFill(levelManager.getBackgroundColor());
-        gc.fillRect(0, 0, AbyssBrickGame.GAME_WIDTH, AbyssBrickGame.GAME_HEIGHT);
+        // 根据当前关卡获取主题
+        ThemeType theme = ImageLoader.getThemeByLevel(game.getCurrentLevel());
+        javafx.scene.image.Image bg = ImageLoader.getBackgroundByTheme(theme);
+
+        if (bg != null) {
+            gc.drawImage(
+                    bg,
+                    0, 0,
+                    AbyssBrickGame.GAME_WIDTH,
+                    AbyssBrickGame.GAME_HEIGHT
+            );
+        } else {
+            // 兜底：图片没加载到时用纯色
+            gc.setFill(javafx.scene.paint.Color.BLACK);
+            gc.fillRect(0, 0, AbyssBrickGame.GAME_WIDTH, AbyssBrickGame.GAME_HEIGHT);
+        }
 
         drawBricks();
         drawBaffle();

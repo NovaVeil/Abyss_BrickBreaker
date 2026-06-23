@@ -45,8 +45,8 @@ public class AudioManager {
     private void loadSounds() {
         // 使用 getClass().getResource() 来获取 resources 下的文件路径
         try {
-            URL bgmUrl = getClass().getResource("/audios/bgm.mp3");
-            URL hitUrl = getClass().getResource("/audios/hit.wav");
+            URL bgmUrl = getClass().getResource("/audios/bgm.wav");
+            URL hitUrl = getClass().getResource("/audios/hit.mp3");
             URL levelUpUrl = getClass().getResource("/audios/level_up.wav");
             URL game_loseUrl = getClass().getResource("/audios/game_lose.mp3");
 
