@@ -79,6 +79,18 @@ public class GameModeSelector {
         if (showingDescription && hoveredMode != null) {
             drawDescriptionBox(hoveredMode);
         }
+        
+        drawInputMethodNotice();
+    }
+    
+    private void drawInputMethodNotice() {
+        double noticeY = GameConstant.GAME_HEIGHT - 40;
+        
+        gc.setFill(Color.web("#FFD93D", 0.9));
+        gc.setFont(Font.font("Microsoft YaHei", 16));
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.fillText("⚠ 温馨提示：请将输入法切换为英文模式，即可用键盘操作",
+                GameConstant.GAME_WIDTH / 2.0, noticeY);
     }
     
     private void drawDescriptionBox(GameMode mode) {

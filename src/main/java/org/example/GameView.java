@@ -27,6 +27,9 @@ public class GameView {
 
     private AnimationTimer gameLoop;
     private boolean showingModeSelection;
+    
+    private boolean moveLeftPressed = false;
+    private boolean moveRightPressed = false;
 
     public GameView(Stage stage) {
         this.primaryStage = stage;
@@ -64,9 +67,26 @@ public class GameView {
             if (code == KeyCode.ESCAPE && !showingModeSelection) {
                 showPauseMenu();
             }
+            if (!showingModeSelection) {
+                if (code == KeyCode.A || code == KeyCode.LEFT) {
+                    moveLeftPressed = true;
+                }
+                if (code == KeyCode.D || code == KeyCode.RIGHT) {
+                    moveRightPressed = true;
+                }
+            }
         });
 
         scene.setOnKeyReleased(event -> {
+            KeyCode code = event.getCode();
+            if (!showingModeSelection) {
+                if (code == KeyCode.A || code == KeyCode.LEFT) {
+                    moveLeftPressed = false;
+                }
+                if (code == KeyCode.D || code == KeyCode.RIGHT) {
+                    moveRightPressed = false;
+                }
+            }
         });
 
         canvas.setOnMouseMoved(event -> {
@@ -74,7 +94,6 @@ public class GameView {
                 modeSelector.handleMouseMove(event.getX(), event.getY());
             } else {
                 double mouseX = event.getX();
-                // 挡板只在水平方向移动，Y坐标固定在窗口底部
                 double paddleNewX = mouseX - game.getBaffle().getWidth() / 2;
                 double paddleFixedY = GameConstant.GAME_HEIGHT - game.getBaffle().getHeight() - 10;
                 game.getBaffle().moveTo(paddleNewX, paddleFixedY);
@@ -92,16 +111,34 @@ public class GameView {
                 restartGame();
             }
         });
+        
+        // 确保canvas能够获得焦点以接收键盘事件
+        canvas.requestFocus();
     }
 
     private void setupGameLoop() {
         gameLoop = new AnimationTimer() {
             @Override
             public void handle(long now) {
+                handleKeyboardMovement();
                 game.update();
                 render();
             }
         };
+    }
+
+    private void handleKeyboardMovement() {
+        if (showingModeSelection || game == null || game.getBaffle() == null) {
+            return;
+        }
+        
+        Baffle baffle = game.getBaffle();
+        if (moveLeftPressed) {
+            baffle.moveLeft();
+        }
+        if (moveRightPressed) {
+            baffle.moveRight();
+        }
     }
 
     private void render() {
@@ -290,8 +327,8 @@ public class GameView {
 
         gc.setTextAlign(TextAlignment.CENTER);
         gc.setFont(Font.font("Microsoft YaHei", 14));
-        gc.fillText("鼠标移动挡板 | P暂停 | ESC菜单",
-                AbyssBrickGame.GAME_WIDTH / 2.0, AbyssBrickGame.GAME_HEIGHT - 10);
+        gc.fillText("鼠标/A D键移动挡板 | P暂停 | ESC菜单",
+                AbyssBrickGame.GAME_WIDTH / 2.0, 20);
     }
 
     private void drawGameOverOverlay() {
@@ -377,6 +414,17 @@ public class GameView {
         primaryStage.show();
         canvas.requestFocus();
         gameLoop.start();
+        
+        // 添加窗口焦点监听，确保canvas始终能获得焦点
+        scene.windowProperty().addListener((obs, oldWindow, newWindow) -> {
+            if (newWindow != null) {
+                newWindow.focusedProperty().addListener((obs2, oldFocused, newFocused) -> {
+                    if (newFocused) {
+                        canvas.requestFocus();
+                    }
+                });
+            }
+        });
         
         // 窗口关闭时停止游戏循环（为数据记录预留时间）
         primaryStage.setOnCloseRequest(event -> {
