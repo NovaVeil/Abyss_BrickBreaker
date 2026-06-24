@@ -91,11 +91,13 @@ public class CollisionDetector {
                 } else {
                     ball.reflectHorizontal();
                 }
-
-                AudioManager.getInstance().playHitSound();
             }
 
             brick.isHit();
+            
+            if (brick.isAlive()) {
+                AudioManager.getInstance().playHitSound();
+            }
         }
         return hit;
     }

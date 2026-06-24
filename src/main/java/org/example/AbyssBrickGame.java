@@ -5,21 +5,17 @@ import java.util.Iterator;
 import java.util.List;
 
 public class AbyssBrickGame {
-    // 音频管理器
     private final AudioManager audioManager = AudioManager.getInstance();
 
-    // 游戏窗口尺寸
     public static final int GAME_WIDTH = GameConstant.GAME_WIDTH;
     public static final int GAME_HEIGHT = GameConstant.GAME_HEIGHT;
 
-    // 游戏实体
     private List<Ball> ballList;
     private Baffle baffle;
     private List<Brick> brickList;
     private List<VirtualBall> virtualBallList;
     private int aliveBrickCount = 0;
 
-    // 游戏状态
     private boolean gameRunning;
     private boolean countdownActive;
     private int currentLevel;
@@ -30,6 +26,9 @@ public class AbyssBrickGame {
     private LevelManager levelManager;
     private GameMode currentMode;
     private boolean modeSelected;
+    private int maxUnlockedLevel;
+    private boolean selectingLevel;
+    private int selectedCampaignLevel;
 
     public AbyssBrickGame() {
         brickList = new ArrayList<>();
@@ -44,26 +43,41 @@ public class AbyssBrickGame {
         levelManager = new LevelManager();
         currentMode = null;
         modeSelected = false;
+        maxUnlockedLevel = 1;
+        selectingLevel = false;
+        selectedCampaignLevel = 1;
 
-        // 初始化挡板
         double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
         baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, currentLevel);
 
-        //播放背景音乐
         audioManager.playBGM();
     }
 
-    //设置游戏模式并开始游戏
     public void startWithMode(GameMode mode) {
         this.currentMode = mode;
         this.modeSelected = true;
         levelManager.setGameMode(mode);
+        
+        if (mode == GameMode.CAMPAIGN) {
+            this.selectingLevel = true;
+        } else {
+            this.selectingLevel = false;
+            this.currentLevel = 1;
+            levelManager.initLevelStyle(currentLevel);
+            initLevelBrick(currentLevel);
+            startCountdown();
+        }
+    }
+    
+    public void startCampaignLevel(int level) {
+        this.selectingLevel = false;
+        this.currentLevel = level;
+        this.selectedCampaignLevel = level;
         levelManager.initLevelStyle(currentLevel);
         initLevelBrick(currentLevel);
         startCountdown();
     }
 
-    // 开始3秒倒计时
     public void startCountdown() {
         countdownActive = true;
         countdownSeconds = 3;
@@ -71,7 +85,6 @@ public class AbyssBrickGame {
         gameRunning = false;
     }
 
-    //更新倒计时
     private void updateCountdown() {
         if (!countdownActive) {
             return;
@@ -85,13 +98,11 @@ public class AbyssBrickGame {
             if (countdownSeconds <= 0) {
                 countdownActive = false;
                 gameRunning = true;
-                // 倒计时结束，生成初始小球
                 respawnBallAtPaddle();
             }
         }
     }
 
-    //小球从挡板随机往左右方向弹出
     private void respawnBallAtPaddle() {
         double ballStartX = baffle.getX() + baffle.getWidth() / 2.0;
         double ballStartY = baffle.getY() - GameConstant.BALL_RADIUS;
@@ -104,11 +115,9 @@ public class AbyssBrickGame {
 
     private void initLevelBrick(int level) {
         try {
-            //根据关卡等级生成砖块
             brickList.clear();
             brickList.addAll(levelManager.generateBricks(level));
             aliveBrickCount = brickList.size();
-            // 生成虚拟小球
             virtualBallList.clear();
             virtualBallList.addAll(levelManager.generateVirtualBalls(level, brickList));
         } catch (Exception e) {
@@ -118,7 +127,6 @@ public class AbyssBrickGame {
     }
 
     public void update() {
-        // 更新倒计时
         if (lifeCount <= 0) {
             return;
         }
@@ -140,30 +148,24 @@ public class AbyssBrickGame {
         }
     }
 
-    //    小球碰撞挡板、砖块检测
     private void checkAllCollision() {
-        // 遍历所有小球进行碰撞检测
         List<Ball> ballsToAdd = new ArrayList<>();
         Iterator<Ball> ballIterator = ballList.iterator();
         while (ballIterator.hasNext()) {
             Ball ball = ballIterator.next();
 
-            // 小球 —— 挡板碰撞
             CollisionDetector.checkBaffileCollision(ball, baffle);
 
-            // 小球 —— 砖块碰撞
             for (Brick brick : brickList) {
                 int hpBefore = brick.getHp();
                 CollisionDetector.checkBrickCollision(ball, brick);
                 int hpAfter = brick.getHp();
 
-                // 如果砖块HP减少且变为0，说明刚被击碎，加分
                 if (hpBefore > hpAfter && hpAfter <= 0) {
                     scoreManager.addScoreForBrick(brick);
                     aliveBrickCount--; // 计数器递减
                 }
 
-                // 礼物砖块被击碎，触发整行整列扣血
                 if (brick instanceof GiftBrick) {
                     GiftBrick gb = (GiftBrick) brick;
                     if (gb.isTiggerGift()) {
@@ -173,17 +175,14 @@ public class AbyssBrickGame {
                 }
             }
 
-            // 小球 —— 虚拟小球碰撞检测
             List<Ball> newBalls = checkVirtualBallCollision(ball);
             if (newBalls != null && !newBalls.isEmpty()) {
                 ballsToAdd.addAll(newBalls);
             }
         }
 
-        // 移除已掉落的小球
         ballList.removeIf(ball -> CollisionDetector.isBallFallOut(ball));
 
-        // 添加新生成的小球
         ballList.addAll(ballsToAdd);
 
         if (ballList.isEmpty() && lifeCount > 0) {
@@ -200,7 +199,6 @@ public class AbyssBrickGame {
         aliveBrickCount--;
     }
 
-    //检测实体小球与虚拟小球的碰撞,碰撞后在虚拟小球位置生成新的实体小球
     private List<Ball> checkVirtualBallCollision(Ball realBall) {
         List<VirtualBall> toRemove = new ArrayList<>();
         List<Ball> toAdd = new ArrayList<>();
@@ -209,27 +207,21 @@ public class AbyssBrickGame {
                 continue;
             }
 
-            // 计算距离
             double dx = realBall.getX() - virtualBall.getX();
             double dy = realBall.getY() - virtualBall.getY();
             double distance = Math.sqrt(dx * dx + dy * dy);
 
-            // 如果碰撞（两个球半径之和）
             if (distance < (realBall.getRadius() + virtualBall.getRadius())) {
-                // 在虚拟小球位置生成新的实体小球
                 Ball newBall = new Ball(virtualBall.getX(), virtualBall.getY());
 
-                // 随机设置新球的方向
                 int newDx = (Math.random() > 0.5 ? 1 : -1) * GameConstant.BALL_SPEED_X;
                 newBall.setDy(-GameConstant.BALL_SPEED_Y); // 向上
                 newBall.setDx(newDx);
 
                 toAdd.add(newBall);
-                // 停用虚拟小球
                 virtualBall.deactivate();
                 toRemove.add(virtualBall);
 
-                // 加分
                 scoreManager.addScore(50);
             }
         }
@@ -237,7 +229,6 @@ public class AbyssBrickGame {
         return toAdd;
     }
 
-    //    当一个关卡中的砖块都被击碎，进入下一关
     private void checkGameStatus() {
         if (aliveBrickCount <= 0) {
             nextLevel();
@@ -246,29 +237,55 @@ public class AbyssBrickGame {
 
 
     private void nextLevel() {
-        currentLevel++;
-        scoreManager.nextLevel();
-        levelManager.initLevelStyle(currentLevel);
+        if (currentMode == GameMode.CAMPAIGN) {
+            if (currentLevel < 10) {
+                currentLevel++;
+                if (currentLevel > maxUnlockedLevel) {
+                    maxUnlockedLevel = currentLevel;
+                }
+                scoreManager.nextLevel();
+                levelManager.initLevelStyle(currentLevel);
 
-        ballList.clear();
-        initLevelBrick(currentLevel);
+                ballList.clear();
+                initLevelBrick(currentLevel);
 
-        double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
-        baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, currentLevel);
+                double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
+                baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, currentLevel);
 
-        // 播放通关音效
-        AudioManager.getInstance().playLevelUpSound();
+                AudioManager.getInstance().playLevelUpSound();
 
-        // 下一关也需要倒计时
-        startCountdown();
+                startCountdown();
+            } else {
+                gameOverWin();
+            }
+        } else {
+            currentLevel++;
+            scoreManager.nextLevel();
+            levelManager.initLevelStyle(currentLevel);
+
+            ballList.clear();
+            initLevelBrick(currentLevel);
+
+            double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
+            baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, currentLevel);
+
+            AudioManager.getInstance().playLevelUpSound();
+
+            startCountdown();
+        }
+    }
+    
+    private void gameOverWin() {
+        gameRunning = false;
+        countdownActive = false;
+        AudioManager.getInstance().stopBGM();
     }
 
-    //游戏结束的方法
     private void gameOver() {
         gameRunning = false;
         scoreManager.resetCombo();
         countdownActive = false;
-        AudioManager.getInstance().stopBGM();// 停止 BGM
+        AudioManager.getInstance().stopBGM();
         ballList.clear();
         virtualBallList.clear();
         brickList.clear();
@@ -276,7 +293,6 @@ public class AbyssBrickGame {
         lifeCount = 0;
     }
 
-    //重新开始的方法
     public void restart() {
         currentLevel = 1;
         lifeCount = GameConstant.LIVES_COUNT;
@@ -285,6 +301,8 @@ public class AbyssBrickGame {
         scoreManager = new ScoreManager();
         modeSelected = false;
         currentMode = null;
+        selectingLevel = false;
+        selectedCampaignLevel = 1;
 
         ballList.clear();
         brickList.clear();
@@ -293,69 +311,69 @@ public class AbyssBrickGame {
         audioManager.playBGM();
     }
 
-    // 玩家重新选择游戏模式
     public void resetModeSelection() {
         this.modeSelected = false;
         this.currentMode = null;
     }
 
-    //
     public boolean isCountdownActive() {
         return countdownActive;
     }
 
-    // 获取倒计时秒数
     public int getCountdownSeconds() {
         return countdownSeconds;
     }
 
-    // 获取小球列表
     public List<Ball> getBallList() {
         return ballList;
     }
 
-    // 获取挡板
     public Baffle getBaffle() {
         return baffle;
     }
 
-    // 获取砖块列表
     public List<Brick> getBrickList() {
         return brickList;
     }
 
-    // 获取虚拟小球列表
     public List<VirtualBall> getVirtualBallList() {
         return virtualBallList;
     }
 
-    // 判断游戏是否运行中
     public boolean isGameRunning() {
         return gameRunning;
     }
 
-    // 获取生命值
     public int getLifeCount() {
         return lifeCount;
     }
 
-    // 获取当前关卡
     public int getCurrentLevel() {
         return currentLevel;
     }
 
-    // 获取分数管理器
     public ScoreManager getScoreManager() {
         return scoreManager;
     }
 
-    // 获取当前游戏模式
     public GameMode getCurrentMode() {
         return currentMode;
     }
 
-    // 判断游戏模式是否已选择
     public boolean isModeSelected() {
         return modeSelected;
     }
+    
+    public boolean isSelectingLevel() {
+        return selectingLevel;
+    }
+    
+    public int getMaxUnlockedLevel() {
+        return maxUnlockedLevel;
+    }
+    
+    public int getSelectedCampaignLevel() {
+        return selectedCampaignLevel;
+    }
+
 }

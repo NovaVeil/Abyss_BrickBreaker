@@ -26,9 +26,11 @@ public class GameView {
     private AbyssBrickGame game;
     private LevelManager levelManager;
     private GameModeSelector modeSelector;
+    private LevelSelector levelSelector;
 
     private AnimationTimer gameLoop;
     private boolean showingModeSelection;
+    private boolean showingLevelSelection;
     
     private boolean moveLeftPressed = false;
     private boolean moveRightPressed = false;
@@ -37,6 +39,7 @@ public class GameView {
         this.primaryStage = stage;
         this.levelManager = new LevelManager();
         this.showingModeSelection = true;
+        this.showingLevelSelection = false;
 
         BorderPane root = new BorderPane();
 
@@ -56,6 +59,7 @@ public class GameView {
     private void initGame() {
         game = new AbyssBrickGame();
         modeSelector = new GameModeSelector(canvas);
+        levelSelector = new LevelSelector(canvas, game.getMaxUnlockedLevel());
     }
 
     private void setupInputHandlers() {
@@ -63,13 +67,13 @@ public class GameView {
 
         scene.setOnKeyPressed(event -> {
             KeyCode code = event.getCode();
-            if (code == KeyCode.P && !showingModeSelection) {
+            if (code == KeyCode.P && !showingModeSelection && !showingLevelSelection) {
                 togglePause();
             }
-            if (code == KeyCode.ESCAPE && !showingModeSelection) {
+            if (code == KeyCode.ESCAPE && !showingModeSelection && !showingLevelSelection) {
                 showPauseMenu();
             }
-            if (!showingModeSelection) {
+            if (!showingModeSelection && !showingLevelSelection) {
                 if (code == KeyCode.A || code == KeyCode.LEFT) {
                     moveLeftPressed = true;
                 }
@@ -81,7 +85,7 @@ public class GameView {
 
         scene.setOnKeyReleased(event -> {
             KeyCode code = event.getCode();
-            if (!showingModeSelection) {
+            if (!showingModeSelection && !showingLevelSelection) {
                 if (code == KeyCode.A || code == KeyCode.LEFT) {
                     moveLeftPressed = false;
                 }
@@ -94,6 +98,8 @@ public class GameView {
         canvas.setOnMouseMoved(event -> {
             if (showingModeSelection) {
                 modeSelector.handleMouseMove(event.getX(), event.getY());
+            } else if (showingLevelSelection) {
+                levelSelector.handleMouseMove(event.getX(), event.getY());
             } else {
                 double mouseX = event.getX();
                 double paddleNewX = mouseX - game.getBaffle().getWidth() / 2;
@@ -106,18 +112,28 @@ public class GameView {
             if (showingModeSelection) {
                 GameMode selectedMode = modeSelector.handleClick(event.getX(), event.getY());
                 if (selectedMode != null) {
-                    showingModeSelection = false;
-                    game.startWithMode(selectedMode);
+                    if (selectedMode == GameMode.CAMPAIGN) {
+                        showingModeSelection = false;
+                        showingLevelSelection = true;
+                        levelSelector.updateMaxUnlockedLevel(game.getMaxUnlockedLevel());
+                    } else {
+                        showingModeSelection = false;
+                        game.startWithMode(selectedMode);
+                    }
+                }
+            } else if (showingLevelSelection) {
+                Integer selectedLevel = levelSelector.handleClick(event.getX(), event.getY());
+                if (selectedLevel != null) {
+                    showingLevelSelection = false;
+                    game.startCampaignLevel(selectedLevel);
                 }
             } else if (!game.isGameRunning()) {
-                // 关键修复：先重置游戏内部状态（清除上一局的 lifeCount=0 等死亡标记）
                 game.restart();
-                // 再显示模式选择界面
                 showingModeSelection = true;
+                showingLevelSelection = false;
             }
         });
         
-        // 确保canvas能够获得焦点以接收键盘事件
         canvas.requestFocus();
     }
 
@@ -151,8 +167,12 @@ public class GameView {
             modeSelector.render();
             return;
         }
+        
+        if (showingLevelSelection) {
+            levelSelector.render();
+            return;
+        }
 
-        // 根据当前关卡获取主题
         ThemeType theme = ImageLoader.getThemeByLevel(game.getCurrentLevel());
         javafx.scene.image.Image bg = ImageLoader.getBackgroundByTheme(theme);
 
@@ -164,7 +184,6 @@ public class GameView {
                     AbyssBrickGame.GAME_HEIGHT
             );
         } else {
-            // 兜底：图片没加载到时用纯色
             gc.setFill(javafx.scene.paint.Color.BLACK);
             gc.fillRect(0, 0, AbyssBrickGame.GAME_WIDTH, AbyssBrickGame.GAME_HEIGHT);
         }
@@ -175,7 +194,6 @@ public class GameView {
         drawVirtualBalls();
         drawUI();
         
-        // 如果正在倒计时，显示倒计时界面
         if (game.isCountdownActive()) {
             drawCountdownOverlay();
         }
@@ -215,14 +233,17 @@ public class GameView {
             }
 
             Color brickColor;
+            int maxHp = getMaxHpForBrick(brick);
+            int currentHp = brick.getHp();
+            
             if (brick instanceof NormalBrick) {
                 brickColor = levelManager.getBrickStyle();
             } else if (brick instanceof HardBrick) {
-                brickColor = Color.web("#F5A623");
+                brickColor = adjustColorBrightness(Color.web("#F5A623"), currentHp, maxHp);
             } else if (brick instanceof GiftBrick) {
-                brickColor = Color.web("#7ED321");
+                brickColor = adjustColorBrightness(Color.web("#7ED321"), currentHp, maxHp);
             } else if (brick instanceof TriangleBrick) {
-                brickColor = Color.web("#9B59B6");
+                brickColor = levelManager.getBrickStyle();
             } else {
                 brickColor = Color.WHITE;
             }
@@ -249,6 +270,31 @@ public class GameView {
                 }
             }
         }
+    }
+    
+    private int getMaxHpForBrick(Brick brick) {
+        if (brick instanceof GiftBrick) {
+            return 3;
+        } else if (brick instanceof HardBrick) {
+            return 2;
+        } else {
+            return 1;
+        }
+    }
+    
+    private Color adjustColorBrightness(Color baseColor, int currentHp, int maxHp) {
+        if (maxHp <= 1 || currentHp == maxHp) {
+            return baseColor;
+        }
+        
+        double brightnessFactor = (double) currentHp / maxHp;
+        brightnessFactor = 0.5 + (brightnessFactor * 0.5);
+        
+        double r = baseColor.getRed() * brightnessFactor;
+        double g = baseColor.getGreen() * brightnessFactor;
+        double b = baseColor.getBlue() * brightnessFactor;
+        
+        return Color.color(r, g, b, baseColor.getOpacity());
     }
 
     private void drawTriangle(Brick brick) {

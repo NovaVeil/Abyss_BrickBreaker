@@ -73,7 +73,7 @@ public class GameModeSelector {
             gc.fillRect(0, 0, AbyssBrickGame.GAME_WIDTH, AbyssBrickGame.GAME_HEIGHT);
         }
         
-        gc.setFill(Color.WHITE);
+        gc.setFill(Color.web("#AAAAAA"));
         gc.setFont(Font.font("Microsoft YaHei", Font.getDefault().getSize() * 2));
         gc.setTextAlign(TextAlignment.CENTER);
         gc.fillText("选择游戏模式", GameConstant.GAME_WIDTH / 2.0, 100);
