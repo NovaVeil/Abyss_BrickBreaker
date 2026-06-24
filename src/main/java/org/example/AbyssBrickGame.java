@@ -237,13 +237,17 @@ public class AbyssBrickGame {
     }
 
     private void checkGameStatus() {
-        if (aliveBrickCount <= 0) {
+        if (aliveBrickCount <= 0 && lifeCount > 0) {
             nextLevel();
         }
     }
 
 
     private void nextLevel() {
+        if (lifeCount <= 0) {
+            gameOver();
+            return;
+        }
         if (currentMode == GameMode.CAMPAIGN) {
             if (currentLevel < 10) {
                 currentLevel++;
