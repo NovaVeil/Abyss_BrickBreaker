@@ -61,11 +61,16 @@ public class GameModeSelector {
 
     
     public void render() {
-        if (backgroundImage != null) {
-            gc.drawImage(backgroundImage, 0, 0, GameConstant.GAME_WIDTH, GameConstant.GAME_HEIGHT);
+        if (ImageLoader.BG_MENU != null) {
+            gc.drawImage(
+                    ImageLoader.BG_MENU,
+                    0, 0,
+                    AbyssBrickGame.GAME_WIDTH,
+                    AbyssBrickGame.GAME_HEIGHT
+            );
         } else {
-            gc.setFill(Color.web("#0a0e27"));
-            gc.fillRect(0, 0, GameConstant.GAME_WIDTH, GameConstant.GAME_HEIGHT);
+            gc.setFill(javafx.scene.paint.Color.BLACK);
+            gc.fillRect(0, 0, AbyssBrickGame.GAME_WIDTH, AbyssBrickGame.GAME_HEIGHT);
         }
         
         gc.setFill(Color.WHITE);

@@ -62,12 +62,12 @@ public class Ball {
         }
     }
 
-    //水平反弹方法（碰左右墙、砖块）
+    //水平反弹方法（碰左/右墙、砖块）
     public void reflectHorizontal() {
         dx = -dx;
     }
 
-    //竖直反弹方法（碰上下墙、挡板、砖块）
+    //竖直反弹方法（碰上墙、挡板、砖块）
     public void reflectVertical() {
         dy = -dy;
     }
