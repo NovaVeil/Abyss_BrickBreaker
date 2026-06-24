@@ -99,6 +99,25 @@ public class LevelManager {
      //闯关模式：生成图形化砖块布局
 
     private List<Brick> generateCampaignBricks(int level) {
+        // 第6-10关：使用每个主题的“高级”生成器（更高密度和更高难度的砖块分布），第1-5关仍为基础图案
+        if (level >= 6 && level <= 10) {
+            int themeIndex = level % 5; // 6->1,7->2,...,10->0
+            switch (themeIndex) {
+                case 1:
+                    return generateAdvancedTheme1(level);
+                case 2:
+                    return generateAdvancedTheme2(level);
+                case 3:
+                    return generateAdvancedTheme3(level);
+                case 4:
+                    return generateAdvancedTheme4(level);
+                case 0:
+                    return generateAdvancedTheme5(level);
+                default:
+                    return generateHeartPatternBricks(level);
+            }
+        }
+
         switch (level % 5) {
             case 1:
                 return generateHeartPatternBricks(level);
@@ -113,6 +132,191 @@ public class LevelManager {
             default:
                 return generateHeartPatternBricks(level);
         }
+    }
+
+    // Helper: 根据关卡难度返回三种主要类型的概率（normal, hard, triangle），礼物砖概率为剩余
+    private double[] getTypeRates(int level, boolean advanced) {
+        // 基础概率
+        double normal = 0.55;
+        double hard = 0.25; // 累计至 0.55+0.25=0.8
+        double triangle = 0.05;
+
+        // 随关卡升高，增加难度（减少普通砖，增加坚硬和三角）
+        double levelFactor = Math.min(1.0, (level - 1) / 9.0); // 0 for level1, 1 for level10
+        normal -= 0.15 * levelFactor; // 最多下降0.15
+        hard += 0.10 * levelFactor; // 最多增加0.10
+        triangle += 0.10 * levelFactor; // 最多增加0.10
+
+        // Advanced 关进一步提高硬砖与三角比例
+        if (advanced) {
+            hard += 0.05;
+            triangle += 0.05;
+            normal -= 0.10;
+        }
+
+        // 保证在合理范围
+        normal = Math.max(0.15, normal);
+        hard = Math.max(0.05, hard);
+        triangle = Math.max(0.0, triangle);
+
+        // 若总和超过1，按比例缩放到0.85，剩余0.15给礼物砖（保证礼物存在）
+        double sum = normal + hard + triangle;
+        double gift = 0.15;
+        if (sum + gift > 1.0) {
+            double scale = (1.0 - gift) / sum;
+            normal *= scale;
+            hard *= scale;
+            triangle *= scale;
+        }
+
+        return new double[]{normal, hard, triangle, gift};
+    }
+
+    private Brick createBrickByRates(double x, double y, double[] rates) {
+        double r = Math.random();
+        double normal = rates[0];
+        double hard = rates[1];
+        double triangle = rates[2];
+        // gift = rates[3]
+        if (r < normal) return new NormalBrick(x, y);
+        r -= normal;
+        if (r < hard) return new HardBrick(x, y);
+        r -= hard;
+        if (r < triangle) return new TriangleBrick(x, y);
+        return new GiftBrick(x, y);
+    }
+
+    // 高级主题生成器（用于第6-10关），每个主题用不同的生成算法，密度和难度更高
+    private List<Brick> generateAdvancedTheme1(int level) {
+        // 以爱心图案为基础，叠加一圈外延，间距更小，密度更高
+        List<Brick> bricks = generateHeartPatternBricks(level);
+        double brickW = GameConstant.BRICK_WIDTH;
+        double brickH = GameConstant.BRICK_HEIGHT;
+        double gap = 6;
+        double centerX = GameConstant.GAME_WIDTH / 2.0;
+        double startY = 40;
+        double[] rates = getTypeRates(level, true);
+
+        // 外环：中心上下左右小十字
+        double[][] offsets = {{0, - (brickH + gap)}, {0, (brickH + gap)}, {-(brickW + gap), 0}, {(brickW + gap), 0}};
+        for (double[] off : offsets) {
+            double x = centerX + off[0];
+            double y = startY + 2 * (brickH + gap) + off[1];
+            bricks.add(createBrickByRates(x, y, rates));
+        }
+
+        // 在心形主要区域附近增加少量随机砖块以提高数量
+        for (int i = 0; i < 12; i++) {
+            double x = centerX + (Math.random() - 0.5) * 220;
+            double y = startY + Math.random() * 180;
+            if (x > 10 && x < GameConstant.GAME_WIDTH - 10) {
+                bricks.add(createBrickByRates(x, y, rates));
+            }
+        }
+
+        return bricks;
+    }
+
+    private List<Brick> generateAdvancedTheme2(int level) {
+        // 菱形基础上做多层填充，外层出现更多坚硬砖
+        List<Brick> bricks = new ArrayList<>();
+        double centerX = GameConstant.GAME_WIDTH / 2.0;
+        double brickW = GameConstant.BRICK_WIDTH;
+        double brickH = GameConstant.BRICK_HEIGHT;
+        double gap = 6;
+        double[] rates = getTypeRates(level, true);
+
+        int layers = 4 + level / 3; // 增加层数
+        for (int layer = 0; layer < layers; layer++) {
+            int cols = 7 + layer;
+            for (int c = 0; c < cols; c++) {
+                double x = centerX - (cols / 2.0) * (brickW + gap) + c * (brickW + gap);
+                double y = 50 + layer * (brickH + gap);
+                bricks.add(createBrickByRates(x, y, rates));
+            }
+        }
+
+        // 随机插入一些礼物砖
+        for (int i = 0; i < 4; i++) {
+            double x = 80 + Math.random() * (GameConstant.GAME_WIDTH - 160);
+            double y = 60 + Math.random() * 200;
+            bricks.add(new GiftBrick(x, y));
+        }
+
+        return bricks;
+    }
+
+    private List<Brick> generateAdvancedTheme3(int level) {
+        // 圆形/环形叠加：更密集的圆环与中心聚集
+        List<Brick> bricks = new ArrayList<>();
+        double centerX = GameConstant.GAME_WIDTH / 2.0;
+        double centerY = 150;
+        double brickW = GameConstant.BRICK_WIDTH;
+        double brickH = GameConstant.BRICK_HEIGHT;
+        double[] rates = getTypeRates(level, true);
+
+        int rings = 3 + level / 3;
+        for (int r = 0; r < rings; r++) {
+            double radius = 60 + r * 30;
+            int segments = 10 + r * 2;
+            for (int s = 0; s < segments; s++) {
+                double angle = 2 * Math.PI * s / segments;
+                double x = centerX + Math.cos(angle) * radius - brickW / 2;
+                double y = centerY + Math.sin(angle) * radius - brickH / 2;
+                bricks.add(createBrickByRates(x, y, rates));
+            }
+        }
+
+        // 中心密集填充
+        for (int i = 0; i < 8 + level; i++) {
+            double x = centerX + (Math.random() - 0.5) * 80;
+            double y = centerY + (Math.random() - 0.5) * 80;
+            bricks.add(createBrickByRates(x, y, rates));
+        }
+
+        return bricks;
+    }
+
+    private List<Brick> generateAdvancedTheme4(int level) {
+        // 箭头/向心排列叠加，增加行数并混合类型
+        List<Brick> bricks = new ArrayList<>();
+        double centerX = GameConstant.GAME_WIDTH / 2.0;
+        double brickW = GameConstant.BRICK_WIDTH;
+        double brickH = GameConstant.BRICK_HEIGHT;
+        double gap = 6;
+        double[] rates = getTypeRates(level, true);
+
+        int rows = 8 + level / 2;
+        for (int row = 0; row < rows; row++) {
+            int cols = 7 + (row % 3);
+            for (int col = 0; col < cols; col++) {
+                double x = centerX - (cols / 2.0) * (brickW + gap) + col * (brickW + gap);
+                double y = 40 + row * (brickH + gap);
+                bricks.add(createBrickByRates(x, y, rates));
+            }
+        }
+
+        return bricks;
+    }
+
+    private List<Brick> generateAdvancedTheme5(int level) {
+        // 星形加强版：在原星形的基础上增加外圈与随机填充
+        List<Brick> base = generateStarPatternBricks(level);
+        List<Brick> bricks = new ArrayList<>(base);
+        double brickW = GameConstant.BRICK_WIDTH;
+        double brickH = GameConstant.BRICK_HEIGHT;
+        double[] rates = getTypeRates(level, true);
+
+        // 增加外圈星点
+        double centerX = GameConstant.GAME_WIDTH / 2.0;
+        double startY = 60;
+        for (int i = 0; i < 12; i++) {
+            double x = centerX + (Math.random() - 0.5) * 340;
+            double y = startY + Math.random() * 220;
+            bricks.add(createBrickByRates(x, y, rates));
+        }
+
+        return bricks;
     }
     //无尽模式：生成高密度随机砖块
 
@@ -215,16 +419,8 @@ public class LevelManager {
                         hardRate = 0.65;
                     }
                     
-                    double rand = Math.random();
-                    Brick brick;
-                    if (rand < normalRate) {
-                        brick = new NormalBrick(x, y);
-                    } else if (rand < hardRate) {
-                        brick = new HardBrick(x, y);
-                    } else {
-                        brick = new GiftBrick(x, y);
-                    }
-                    bricks.add(brick);
+                    double[] rates = getTypeRates(level, false);
+                    bricks.add(createBrickByRates(x, y, rates));
                 }
             }
         }
@@ -260,16 +456,8 @@ public class LevelManager {
                     double x = centerX - (4.5 * (brickW + gap)) + col * (brickW + gap);
                     double y = startY + row * (brickH + gap);
                     
-                    double rand = Math.random();
-                    Brick brick;
-                    if (rand < 0.5) {
-                        brick = new NormalBrick(x, y);
-                    } else if (rand < 0.75) {
-                        brick = new HardBrick(x, y);
-                    } else {
-                        brick = new GiftBrick(x, y);
-                    }
-                    bricks.add(brick);
+                    double[] rates = getTypeRates(level, false);
+                    bricks.add(createBrickByRates(x, y, rates));
                 }
             }
         }
@@ -319,18 +507,8 @@ public class LevelManager {
                     double x = centerX - (3.5 * (brickW + gap)) + col * (brickW + gap);
                     double y = startY + row * (brickH + gap);
                     
-                    double rand = Math.random();
-                    Brick brick;
-                    if (rand < normalRate) {
-                        brick = new NormalBrick(x, y);
-                    } else if (rand < hardRate) {
-                        brick = new HardBrick(x, y);
-                    } else if (triangleRate > 0 && rand < hardRate + triangleRate) {
-                        brick = new TriangleBrick(x, y);
-                    } else {
-                        brick = new GiftBrick(x, y);
-                    }
-                    bricks.add(brick);
+                    double[] rates = getTypeRates(level, false);
+                    bricks.add(createBrickByRates(x, y, rates));
                 }
             }
         }
@@ -382,9 +560,14 @@ public class LevelManager {
                     if (row == 0 || row == diamondPattern.length - 1) {
                         bricks.add(new GiftBrick(x, y));
                     } else if (row == 1 || row == diamondPattern.length - 2) {
-                        bricks.add(new HardBrick(x, y));
+                        // 外层第二行优先为坚硬砖，但仍用概率以便随关卡变化
+                        double[] rates = getTypeRates(level, false);
+                        // 提高 hard 的权重临时替换
+                        rates[1] = Math.max(rates[1], 0.35);
+                        bricks.add(createBrickByRates(x, y, rates));
                     } else {
-                        bricks.add(new NormalBrick(x, y));
+                        double[] rates = getTypeRates(level, false);
+                        bricks.add(createBrickByRates(x, y, rates));
                     }
                 }
             }
@@ -417,7 +600,8 @@ public class LevelManager {
                 if (arrowPattern[row][col] == 1) {
                     double x = centerX - (3 * (brickW + gap)) + col * (brickW + gap);
                     double y = startY + row * (brickH + gap);
-                    bricks.add(new NormalBrick(x, y));
+                    double[] rates = getTypeRates(level, false);
+                    bricks.add(createBrickByRates(x, y, rates));
                 }
             }
         }
@@ -433,7 +617,16 @@ public class LevelManager {
         virtualBalls.clear();
         
         // 虚拟小球数量：第1关3个，之后每关+1
-        int virtualBallCount = 3 + (level - 1);
+        int virtualBallCount;
+        
+        // 如果是闯关模式并且是第6-10关，使用第1-5关的基础数量，并在基础上每关+1（即对应该主题的基础数量再+1）
+        if (currentMode == GameMode.CAMPAIGN && level >= 6 && level <= 10) {
+            int baseLevel = level - 5;
+            int baseCount = 3 + (baseLevel - 1); // 基础数量来自对应的第1-5关
+            virtualBallCount = baseCount + 1; // 在基础上每关添加1个
+        } else {
+            virtualBallCount = 3 + (level - 1);
+        }
         
         // 无尽模式增加虚拟小球数量
         if (currentMode == GameMode.ENDLESS) {
@@ -467,6 +660,11 @@ public class LevelManager {
             startX = 10;
         }
         
+        // 为避免虚拟小球总是集中在左上角，随机移动候选网格的水平偏移
+        double maxOffset = Math.max(0, GameConstant.GAME_WIDTH / 4.0);
+        double gridOffsetX = (Math.random() - 0.5) * maxOffset; // 左右小范围随机偏移
+        startX += gridOffsetX;
+        
         for (int row = 0; row <= rowCount; row++) {
             for (int col = 0; col < colCount; col++) {
                 // 计算间隙位置（砖块之间）
@@ -485,10 +683,13 @@ public class LevelManager {
                 
                 if (!overlaps && x > 50 && x < GameConstant.GAME_WIDTH - 50 &&
                     y > 50 && y < GameConstant.GAME_HEIGHT - 100) {
-                    possiblePositions.add(new double[]{x, y});
+                    // 在格点上添加少量抖动，使位置更随机而不是总在格点中心
+                    double jitterX = (Math.random() - 0.5) * (brickW / 2.0);
+                    double jitterY = (Math.random() - 0.5) * (brickH / 2.0);
+                    possiblePositions.add(new double[]{x + jitterX, y + jitterY});
                 }
-            }
-        }
+             }
+         }
         
         // 从候选位置中选择指定数量的位置，确保彼此之间有足够距离
         double minDistance = 60.0; // 最小间距60像素
@@ -525,14 +726,21 @@ public class LevelManager {
                 continue; // 重新尝试
             }
             
-            // 随机选择一个有效位置
+            // 随机选择一个有效位置（并再加一点抖动）
             int index = (int) (Math.random() * validPositions.size());
             double[] selectedPos = validPositions.get(index);
-            virtualBalls.add(new VirtualBall(selectedPos[0], selectedPos[1]));
-            
+            double extraJitterX = (Math.random() - 0.5) * (brickW / 3.0);
+            double extraJitterY = (Math.random() - 0.5) * (brickH / 3.0);
+            double finalX = selectedPos[0] + extraJitterX;
+            double finalY = selectedPos[1] + extraJitterY;
+            // 确保不出界
+            finalX = Math.max(20, Math.min(finalX, GameConstant.GAME_WIDTH - 20));
+            finalY = Math.max(20, Math.min(finalY, GameConstant.GAME_HEIGHT - 120));
+            virtualBalls.add(new VirtualBall(finalX, finalY));
+
             // 创建 final 副本用于 lambda 表达式
             final double finalMinDistance = minDistance;
-            
+
             // 从候选列表中移除已选位置及其附近位置
             possiblePositions.removeIf(pos -> {
                 double dx = pos[0] - selectedPos[0];

@@ -132,9 +132,15 @@ public class CollisionDetector {
         double targetX = giftBrick.getX();
         double targetY = giftBrick.getY();
 
+        ((GiftBrick) giftBrick).markTriggered();
+
         for (Brick b : allBricks) {
             // 已经碎掉的不处理
             if (!b.isAlive()) {
+                continue;
+            }
+            // 跳过自身
+            if (b == giftBrick) {
                 continue;
             }
             // 判断同一行 或 同一列

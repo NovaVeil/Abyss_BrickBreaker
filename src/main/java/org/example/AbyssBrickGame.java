@@ -63,6 +63,7 @@ public class AbyssBrickGame {
         } else {
             this.selectingLevel = false;
             this.currentLevel = 1;
+            this.lifeCount = GameConstant.LIVES_COUNT;
             levelManager.initLevelStyle(currentLevel);
             initLevelBrick(currentLevel);
             startCountdown();
@@ -75,6 +76,7 @@ public class AbyssBrickGame {
         this.selectedCampaignLevel = level;
         levelManager.initLevelStyle(currentLevel);
         initLevelBrick(currentLevel);
+        this.lifeCount = GameConstant.LIVES_COUNT;
         startCountdown();
     }
 
@@ -246,6 +248,7 @@ public class AbyssBrickGame {
                 scoreManager.nextLevel();
                 levelManager.initLevelStyle(currentLevel);
 
+                this.lifeCount = GameConstant.LIVES_COUNT;
                 ballList.clear();
                 initLevelBrick(currentLevel);
 
@@ -263,6 +266,7 @@ public class AbyssBrickGame {
             scoreManager.nextLevel();
             levelManager.initLevelStyle(currentLevel);
 
+            this.lifeCount = GameConstant.LIVES_COUNT;
             ballList.clear();
             initLevelBrick(currentLevel);
 
