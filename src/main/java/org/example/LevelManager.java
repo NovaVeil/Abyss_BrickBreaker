@@ -789,11 +789,11 @@ public class LevelManager {
             return "无尽关卡 " + currentLevel;
         }
         switch (currentLevel % 5) {
-            case 1: return "星空蓝";
-            case 2: return "梦幻紫";
-            case 3: return "深海青";
-            case 4: return "玫瑰红";
-            case 0: return "暗夜黑";
+            case 1: return "极光之镜";
+            case 2: return "褪色森林";
+            case 3: return "黄金树";
+            case 4: return "星月律法";
+            case 0: return "斜阳冰川";
             default: return "经典";
         }
     }

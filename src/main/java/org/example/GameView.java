@@ -386,6 +386,9 @@ public class GameView {
         gc.fillText("连击: " + scoreManager.getComboValue(), 10, 75);
         gc.fillText("倍率: x" + String.format("%.1f", scoreManager.getComboMultiplierValue()), 10, 100);
 
+        //实时显示最高分
+        gc.fillText("最高分: " + game.getHighScore(), 10, 125);
+
         gc.setTextAlign(TextAlignment.RIGHT);
         gc.fillText("生命值: " + game.getLifeCount(), AbyssBrickGame.GAME_WIDTH - 10, 25);
         gc.fillText("剩余小球: " + game.getBallList().size(), AbyssBrickGame.GAME_WIDTH - 10, 50);
@@ -397,24 +400,50 @@ public class GameView {
     }
 
     private void drawGameOverOverlay() {
+        // 半透明黑色背景
         gc.setFill(Color.rgb(0, 0, 0, 0.8));
         gc.fillRect(0, 0, AbyssBrickGame.GAME_WIDTH, AbyssBrickGame.GAME_HEIGHT);
+
+        // 游戏结束标题
         gc.setFill(Color.RED);
         gc.setFont(Font.font("Microsoft YaHei", 48));
         gc.setTextAlign(TextAlignment.CENTER);
         gc.fillText("游戏结束", AbyssBrickGame.GAME_WIDTH / 2.0,
                 AbyssBrickGame.GAME_HEIGHT / 2.0 - 80);
+
+        // 当前分数
         gc.setFill(Color.WHITE);
         gc.setFont(Font.font("Microsoft YaHei", 24));
         gc.fillText("最终分数: " + game.getScoreManager().getScoreValue(),
                 AbyssBrickGame.GAME_WIDTH / 2.0,
                 AbyssBrickGame.GAME_HEIGHT / 2.0 - 20);
+
+        // 到达关卡
         gc.fillText("到达关卡: " + game.getCurrentLevel(),
                 AbyssBrickGame.GAME_WIDTH / 2.0,
                 AbyssBrickGame.GAME_HEIGHT / 2.0 + 20);
+
+        // ✅ 历史最高分
+        int highScore = game.getHighScore();
+        gc.setFill(Color.web("#FFD93D"));
+        gc.fillText("历史最高分: " + highScore,
+                AbyssBrickGame.GAME_WIDTH / 2.0,
+                AbyssBrickGame.GAME_HEIGHT / 2.0 + 60);
+
+        // ✅ 新纪录提示
+        if (game.getCurrentScore() >= highScore && game.getCurrentScore() > 0) {
+            gc.setFill(Color.web("#00FF88"));
+            gc.setFont(Font.font("Microsoft YaHei", 18));
+            gc.fillText("🎉 新纪录！",
+                    AbyssBrickGame.GAME_WIDTH / 2.0,
+                    AbyssBrickGame.GAME_HEIGHT / 2.0 + 95);
+        }
+
+        // 重新开始提示
+        gc.setFill(Color.WHITE);
         gc.setFont(Font.font("Microsoft YaHei", 18));
-        gc.fillText("点击鼠标返回模式选择界面", AbyssBrickGame.GAME_WIDTH / 2.0,
-                AbyssBrickGame.GAME_HEIGHT / 2.0 + 70);
+        gc.fillText("点击鼠标重新开始", AbyssBrickGame.GAME_WIDTH / 2.0,
+                AbyssBrickGame.GAME_HEIGHT / 2.0 + 130);
     }
 
     private void centerWindow() {

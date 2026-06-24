@@ -29,6 +29,7 @@ public class AbyssBrickGame {
     private int maxUnlockedLevel;
     private boolean selectingLevel;
     private int selectedCampaignLevel;
+    private int highScore = 0;
 
     public AbyssBrickGame() {
         brickList = new ArrayList<>();
@@ -46,6 +47,10 @@ public class AbyssBrickGame {
         maxUnlockedLevel = 1;
         selectingLevel = false;
         selectedCampaignLevel = 1;
+
+        // 读取历史最高分
+        this.highScore = ScoreFile.loadHighScore();
+
 
         double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
         baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, currentLevel);
@@ -295,6 +300,7 @@ public class AbyssBrickGame {
         brickList.clear();
         aliveBrickCount = 0;
         lifeCount = 0;
+        ScoreFile.saveHighScore(scoreManager.getScoreValue());
     }
 
     public void restart() {
@@ -379,5 +385,11 @@ public class AbyssBrickGame {
     public int getSelectedCampaignLevel() {
         return selectedCampaignLevel;
     }
+    public int getHighScore() {
+        return ScoreFile.loadHighScore();
+    }
 
+    public int getCurrentScore() {
+        return scoreManager.getScoreValue();
+    }
 }
