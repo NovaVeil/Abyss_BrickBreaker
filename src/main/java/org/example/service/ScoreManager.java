@@ -65,6 +65,17 @@ public class ScoreManager {
         currentLevel++;
     }
 
+    public void setScore(int score) {
+        this.score.set(score);
+    }
+
+    public void resetAll() {
+        this.score.set(0);
+        this.combo.set(0);
+        this.comboMultiplier.set(1.0);
+        this.currentLevel = 1;
+    }
+
     public int getScoreValue() {
         return score.get();
     }

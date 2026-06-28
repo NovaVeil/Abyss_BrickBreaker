@@ -145,11 +145,15 @@ public class GameController {
                 if (action != null) {
                     handlePauseMenuAction(action);
                 }
-                return;
             } else if (!game.isGameRunning() && !game.isCountdownActive()) {
-                game.restart();
-                showingModeSelection = true;
-                showingLevelSelection = false;
+                if (game.getCurrentMode() == GameMode.CAMPAIGN) {
+                    showingLevelSelection = true;
+                    levelSelector.updateMaxUnlockedLevel(game.getMaxUnlockedLevel());
+                } else {
+                    game.restart();
+                    showingModeSelection = true;
+                    showingLevelSelection = false;
+                }
                 showingPauseMenu = false;
                 gamePaused = false;
             }
@@ -221,6 +225,7 @@ public class GameController {
             baffle.moveRight();
         }
     }
+    
 
     public AbyssBrickGame getGame() {
         return game;

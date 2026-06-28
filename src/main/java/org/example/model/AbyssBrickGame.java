@@ -7,11 +7,12 @@ import org.example.util.GameConstant;
 import org.example.service.AudioManager;
 import org.example.util.CollisionDetector;
 
-import java.io.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import java.util.Map;
 
 public class AbyssBrickGame {
     private final AudioManager audioManager = AudioManager.getInstance();
@@ -45,13 +46,9 @@ public class AbyssBrickGame {
     private boolean victoryScreen;
     private int victoryCountdownSeconds;
     private long lastVictoryCountdownTime;
+    private Map<Integer, Integer> levelScores;
     private List<VictoryParticle> victoryParticles;
     private long lastParticleSpawnTime;
-
-    private static final String SAVE_DIR_NAME = ".abyss_brickbreaker";
-    private static final String SAVE_FILE_NAME = "max_unlocked_level.dat";
-    private static final File SAVE_DIR = new File(System.getProperty("user.home"), SAVE_DIR_NAME);
-    private static final File SAVE_FILE = new File(SAVE_DIR, SAVE_FILE_NAME);
 
     private static final long COUNTDOWN_INTERVAL_MS = 1000;
     private static final long VICTORY_COUNTDOWN_INTERVAL_NS = 1_000_000_000L;
@@ -59,8 +56,6 @@ public class AbyssBrickGame {
     private static final double NORMAL_DELTA_TIME_S = 0.016;
 
     public AbyssBrickGame() {
-        ensureSaveDirectoryExists();
-        
         brickList = new ArrayList<>();
         ballList = new ArrayList<>();
         virtualBallList = new ArrayList<>();
@@ -75,30 +70,20 @@ public class AbyssBrickGame {
         currentMode = null;
         modeSelected = false;
         
-        this.maxUnlockedLevel = loadMaxUnlockedLevel();
-        System.out.println("=== 游戏初始化完成，最大解锁关卡: " + this.maxUnlockedLevel + " ===");
+        this.maxUnlockedLevel = ScoreFile.loadMaxUnlockedLevel();
+        System.out.println("=== 游戏初始化成功，最大解锁关卡: " + this.maxUnlockedLevel + " ===");
         
         selectingLevel = false;
         selectedCampaignLevel = 1;
 
+        // 读取历史最高分
         this.highScore = ScoreFile.loadHighScore();
-
+        this.levelScores = ScoreFile.loadLevelScores();
 
         double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
         baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, currentLevel);
 
         audioManager.playBGM();
-    }
-
-    private void ensureSaveDirectoryExists() {
-        try {
-            if (!SAVE_DIR.exists()) {
-                SAVE_DIR.mkdirs();
-                System.out.println(">>> 创建存档目录: " + SAVE_DIR.getAbsolutePath());
-            }
-        } catch (Exception e) {
-            System.err.println(">>> 创建存档目录失败: " + e.getMessage());
-        }
     }
 
     public void startWithMode(GameMode mode) {
@@ -112,17 +97,17 @@ public class AbyssBrickGame {
             this.selectingLevel = false;
             this.currentLevel = 1;
             this.lifeCount = GameConstant.LIVES_COUNT;
-            
+
             ballList.clear();
             virtualBallList.clear();
             aliveBrickCount = 0;
-            
+
             levelManager.initLevelStyle(currentLevel);
             initLevelBrick(currentLevel);
-            
+
             double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
             baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, currentLevel);
-            
+
             startCountdown();
         }
     }
@@ -131,18 +116,25 @@ public class AbyssBrickGame {
         this.selectingLevel = false;
         this.currentLevel = level;
         this.selectedCampaignLevel = level;
-        
+
         ballList.clear();
         virtualBallList.clear();
         aliveBrickCount = 0;
-        
+
         levelManager.initLevelStyle(currentLevel);
         initLevelBrick(currentLevel);
         this.lifeCount = GameConstant.LIVES_COUNT;
-        
+
+        scoreManager.resetAll();
+        if (level > 1) {
+            int inheritedScore = levelScores.getOrDefault(level - 1, 0);
+            scoreManager.setScore(inheritedScore);
+        }
+
+
         double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
         baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, currentLevel);
-        
+
         startCountdown();
     }
 
@@ -154,7 +146,7 @@ public class AbyssBrickGame {
     }
 
     private void updateCountdown() {
-        if (!countdownActive) {
+        if (!countdownActive || victoryScreen) {
             return;
         }
 
@@ -245,7 +237,7 @@ public class AbyssBrickGame {
     }
 
     public void skipVictoryScreen() {
-        if (victoryScreen) {
+        if (victoryScreen && !gameRunning) {
             victoryScreen = false;
             goToNextLevel();
             System.out.println(">>> 跳过胜利画面，直接进入下一关");
@@ -255,42 +247,53 @@ public class AbyssBrickGame {
     private void goToNextLevel() {
         if (currentMode == GameMode.CAMPAIGN) {
             if (currentLevel < 10) {
+                levelScores.put(currentLevel, scoreManager.getScoreValue());
+                ScoreFile.saveLevelScore(currentLevel, scoreManager.getScoreValue(), maxUnlockedLevel);
+
                 currentLevel++;
                 if (currentLevel > maxUnlockedLevel) {
                     maxUnlockedLevel = currentLevel;
-                    saveMaxUnlockedLevel(maxUnlockedLevel);
+                    ScoreFile.saveMaxUnlockedLevel(maxUnlockedLevel);
+                    System.out.println(">>> ✓ 已保存解锁关卡: " + maxUnlockedLevel);
                 }
                 scoreManager.nextLevel();
-                initNextLevel();
+                levelManager.initLevelStyle(currentLevel);
+
+                this.lifeCount = GameConstant.LIVES_COUNT;
+                ballList.clear();
+                initLevelBrick(currentLevel);
+
+                double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
+                baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, currentLevel);
+
+                AudioManager.getInstance().playLevelUpSound();
+
+                startCountdown();
             } else {
                 gameOverWin();
             }
         } else {
             currentLevel++;
             scoreManager.nextLevel();
-            initNextLevel();
+            levelManager.initLevelStyle(currentLevel);
+
+            this.lifeCount = GameConstant.LIVES_COUNT;
+            ballList.clear();
+            initLevelBrick(currentLevel);
+
+            double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
+            baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, currentLevel);
+
+            AudioManager.getInstance().playLevelUpSound();
+
+            startCountdown();
         }
-    }
-
-    private void initNextLevel() {
-        levelManager.initLevelStyle(currentLevel);
-
-        this.lifeCount = GameConstant.LIVES_COUNT;
-        ballList.clear();
-        initLevelBrick(currentLevel);
-
-        double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
-        baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, currentLevel);
-
-        AudioManager.getInstance().playLevelUpSound();
-
-        startCountdown();
     }
 
     private void checkAllCollision() {
         ballsToAddBuffer.clear();
         virtualBallsToRemoveBuffer.clear();
-        
+
         Iterator<Ball> ballIterator = ballList.iterator();
         while (ballIterator.hasNext()) {
             Ball ball = ballIterator.next();
@@ -371,7 +374,7 @@ public class AbyssBrickGame {
     }
 
     private void checkGameStatus() {
-        if (aliveBrickCount <= 0 && lifeCount > 0) {
+        if (aliveBrickCount <= 0 && lifeCount > 0 && !victoryScreen) {
             nextLevel();
         }
     }
@@ -382,24 +385,39 @@ public class AbyssBrickGame {
             gameOver();
             return;
         }
-        
+
+        if (currentMode == GameMode.CAMPAIGN) {
+            int nextLevel = currentLevel + 1;
+            if (nextLevel > maxUnlockedLevel) {
+                maxUnlockedLevel = nextLevel;
+            }
+        }
+
+        levelScores.put(currentLevel, scoreManager.getScoreValue());
+        ScoreFile.saveLevelScore(currentLevel, scoreManager.getScoreValue(), maxUnlockedLevel);
+
+        if (currentMode == GameMode.CAMPAIGN) {
+            ScoreFile.saveMaxUnlockedLevel(maxUnlockedLevel);
+        }
+
         victoryScreen = true;
         victoryCountdownSeconds = 3;
         lastVictoryCountdownTime = 0;
         lastParticleSpawnTime = 0;
         victoryParticles.clear();
         gameRunning = false;
-        
+        countdownActive = false;
+
         ballList.clear();
         brickList.clear();
         virtualBallList.clear();
         aliveBrickCount = 0;
-        
+
         spawnCelebrationParticles();
-        
+
         System.out.println(">>> 关卡完成！显示胜利画面，3秒后进入第 " + (currentLevel + 1) + " 关");
     }
-    
+
     private void spawnCelebrationParticles() {
         Random random = new Random();
         for (int i = 0; i < 50; i++) {
@@ -408,12 +426,12 @@ public class AbyssBrickGame {
             victoryParticles.add(new VictoryParticle(x, y));
         }
     }
-    
+
     public void updateVictoryParticles(long now) {
         if (lastParticleSpawnTime == 0) {
             lastParticleSpawnTime = now;
         }
-        
+
         if (now - lastParticleSpawnTime > 100000000L) {
             Random random = new Random();
             int count = random.nextInt(3) + 2;
@@ -424,7 +442,7 @@ public class AbyssBrickGame {
             }
             lastParticleSpawnTime = now;
         }
-        
+
         Iterator<VictoryParticle> iterator = victoryParticles.iterator();
         while (iterator.hasNext()) {
             VictoryParticle particle = iterator.next();
@@ -434,11 +452,12 @@ public class AbyssBrickGame {
             }
         }
     }
-    
+
     public List<VictoryParticle> getVictoryParticles() {
         return victoryParticles;
     }
-    
+
+
     private void gameOverWin() {
         gameRunning = false;
         countdownActive = false;
@@ -470,7 +489,8 @@ public class AbyssBrickGame {
         selectedCampaignLevel = 1;
         levelManager.setGameMode(GameMode.CAMPAIGN);
         
-        this.maxUnlockedLevel = loadMaxUnlockedLevel();
+        this.maxUnlockedLevel = ScoreFile.loadMaxUnlockedLevel();
+        this.levelScores = ScoreFile.loadLevelScores();
         System.out.println("=== 游戏重启，重新加载最大解锁关卡: " + this.maxUnlockedLevel + " ===");
 
         ballList.clear();
@@ -591,63 +611,5 @@ public class AbyssBrickGame {
 
     public LevelManager getLevelManager() {
         return levelManager;
-    }
-
-    private int loadMaxUnlockedLevel() {
-        try {
-            if (SAVE_FILE.exists()) {
-                BufferedReader reader = new BufferedReader(new FileReader(SAVE_FILE));
-                String line = reader.readLine();
-                int level = Integer.parseInt(line.trim());
-                reader.close();
-                System.out.println(">>> ✓ 从文件读取到最大解锁关卡: " + level);
-                System.out.println(">>>   文件路径: " + SAVE_FILE.getAbsolutePath());
-                return Math.max(1, level);
-            } else {
-                System.out.println(">>> ℹ 存档文件不存在，使用默认值 1");
-                System.out.println(">>>   预期文件路径: " + SAVE_FILE.getAbsolutePath());
-            }
-        } catch (Exception e) {
-            System.err.println(">>> ✗ 读取关卡解锁状态失败: " + e.getMessage());
-            e.printStackTrace();
-        }
-        return 1;
-    }
-
-    private void saveMaxUnlockedLevel(int level) {
-        try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter(SAVE_FILE));
-            writer.write(String.valueOf(level));
-            writer.flush();
-            writer.close();
-            System.out.println(">>> ✓ 已保存最大解锁关卡到文件: " + level);
-            System.out.println(">>>   文件路径: " + SAVE_FILE.getAbsolutePath());
-            
-            verifySaveFile(level);
-        } catch (Exception e) {
-            System.err.println(">>> ✗ 保存关卡解锁状态失败: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-    
-    private void verifySaveFile(int expectedLevel) {
-        try {
-            if (SAVE_FILE.exists()) {
-                BufferedReader reader = new BufferedReader(new FileReader(SAVE_FILE));
-                String line = reader.readLine();
-                int savedLevel = Integer.parseInt(line.trim());
-                reader.close();
-                
-                if (savedLevel == expectedLevel) {
-                    System.out.println(">>> ✓ 文件验证成功，保存的关卡: " + savedLevel);
-                } else {
-                    System.err.println(">>> ✗ 文件验证失败！期望: " + expectedLevel + "，实际: " + savedLevel);
-                }
-            } else {
-                System.err.println(">>> ✗ 文件验证失败！文件不存在");
-            }
-        } catch (Exception e) {
-            System.err.println(">>> ✗ 文件验证异常: " + e.getMessage());
-        }
     }
 }
