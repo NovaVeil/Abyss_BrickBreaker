@@ -895,8 +895,8 @@ public class LevelManager {
             return "无尽关卡 " + currentLevel;
         }
         switch (currentLevel % 5) {
-            case 1: return "褪色森林";
-            case 2: return "黄金树";
+            case 1: return "黄金树";
+            case 2: return "褪色森林";
             case 3: return "星月律法";
             case 4: return "斜阳冰川";
             case 0: return "极光之镜";
