@@ -147,7 +147,7 @@ public class GameController {
             @Override
             public void handle(long now) {
                 handleKeyboardMovement();
-                game.update();
+                game.update(now);
                 view.render(showingModeSelection, showingLevelSelection, modeSelector, levelSelector);
             }
         };

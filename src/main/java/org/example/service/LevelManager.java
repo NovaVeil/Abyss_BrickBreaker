@@ -346,14 +346,14 @@ public class LevelManager {
                 boolean inBlade = false;
                 int[] dirs = {0, 1, 2, 3};
                 for (int d : dirs) {
-                    int along, perp;
+                    int along, perpendicular;
                     switch (d) {
-                        case 0: along = col;  perp = row;  break;
-                        case 1: along = -row; perp = col;  break;
-                        case 2: along = -col; perp = -row; break;
-                        default: along = row;  perp = -col; break;
+                        case 0: along = col;  perpendicular = row;  break;
+                        case 1: along = -row; perpendicular = col;  break;
+                        case 2: along = -col; perpendicular = -row; break;
+                        default: along = row;  perpendicular = -col; break;
                     }
-                    if (along >= 1 && along <= bladeLen && Math.abs(perp) <= bladeW) {
+                    if (along >= 1 && along <= bladeLen && Math.abs(perpendicular) <= bladeW) {
                         inBlade = true;
                         break;
                     }
@@ -443,7 +443,7 @@ public class LevelManager {
         double startY = 40;                          // 起始Y坐标
         double brickW = GameConstant.BRICK_WIDTH;   // 砖块宽度
         double brickH = GameConstant.BRICK_HEIGHT;  // 砖块高度
-        double gap = 6;                              // 砖块间距（减小以增加密度）
+        double gap = GameConstant.BRICK_GAP;         // 砖块间距
 
         // 砖块类型概率配置（无尽模式更难）
         double normalRate = 0.55;  // 普通砖块55%
@@ -696,14 +696,14 @@ public class LevelManager {
                 boolean inBlade = false;
                 int[] dirs = {0, 1, 2, 3};
                 for (int d : dirs) {
-                    int along, perp;// along: 沿叶片方向的距离，perp: 垂直于叶片方向的距离
+                    int along, perpendicular;// along: 沿叶片方向的距离，perpendicular: 垂直于叶片方向的距离
                     switch (d) {
-                        case 0: along = col;  perp = row;  break;
-                        case 1: along = -row; perp = col;  break;
-                        case 2: along = -col; perp = -row; break;
-                        default: along = row;  perp = -col; break;
+                        case 0: along = col;  perpendicular = row;  break;
+                        case 1: along = -row; perpendicular = col;  break;
+                        case 2: along = -col; perpendicular = -row; break;
+                        default: along = row;  perpendicular = -col; break;
                     }
-                    if (along >= 1 && along <= bladeLen && Math.abs(perp) <= bladeW) {
+                    if (along >= 1 && along <= bladeLen && Math.abs(perpendicular) <= bladeW) {
                         inBlade = true;
                         break;
                     }
@@ -734,7 +734,7 @@ public class LevelManager {
         
         double brickW = GameConstant.BRICK_WIDTH;
         double brickH = GameConstant.BRICK_HEIGHT;
-        double gap = 8;
+        double gap = GameConstant.BRICK_GAP;
         
         // 定义可能的虚拟小球位置（砖块间隙）
         List<double[]> possiblePositions = new ArrayList<>();
@@ -749,7 +749,7 @@ public class LevelManager {
             if (colCount > 20) colCount = 20;
             rowCount = 6 + level / 2;
             if (rowCount > 12) rowCount = 12;
-            gap = 6;
+            gap = GameConstant.BRICK_GAP;
         }
         
         double startX = 30;
