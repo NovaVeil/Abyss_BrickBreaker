@@ -31,6 +31,13 @@ public class GameView {
     private boolean restartHovered = false;
     private boolean exitHovered = false;
 
+    private static final Font FONT_UI_SMALL = Font.font("Microsoft YaHei", 14);
+    private static final Font FONT_UI_MEDIUM = Font.font("Microsoft YaHei", 18);
+    private static final Font FONT_UI_LARGE = Font.font("Microsoft YaHei", 24);
+    private static final Font FONT_TITLE = Font.font("Microsoft YaHei", 48);
+    private static final Font FONT_VICTORY = Font.font("Microsoft YaHei", 60);
+    private static final Font FONT_COUNTDOWN = Font.font("Microsoft YaHei", 120);
+
     public GameView(Stage stage, Canvas canvas, AbyssBrickGame game) {
         this.canvas = canvas;
         this.gc = canvas.getGraphicsContext2D();
@@ -130,14 +137,14 @@ public class GameView {
         gc.fillRect(0, 0, AbyssBrickGame.GAME_WIDTH, AbyssBrickGame.GAME_HEIGHT);
 
         gc.setFill(Color.web("#FFD93D"));
-        gc.setFont(Font.font("Microsoft YaHei", 120));
+        gc.setFont(FONT_COUNTDOWN);
         gc.setTextAlign(TextAlignment.CENTER);
         gc.fillText(String.valueOf(game.getCountdownSeconds()),
                 AbyssBrickGame.GAME_WIDTH / 2.0,
                 AbyssBrickGame.GAME_HEIGHT / 2.0 + 40);
 
         gc.setFill(Color.WHITE);
-        gc.setFont(Font.font("Microsoft YaHei", 24));
+        gc.setFont(FONT_UI_LARGE);
         gc.fillText("准备开始！",
                 AbyssBrickGame.GAME_WIDTH / 2.0,
                 AbyssBrickGame.GAME_HEIGHT / 2.0 + 100);
@@ -254,7 +261,7 @@ public class GameView {
         ScoreManager scoreManager = game.getScoreManager();
 
         gc.setFill(Color.WHITE);
-        gc.setFont(Font.font("Microsoft YaHei", 18));
+        gc.setFont(FONT_UI_MEDIUM);
         gc.setTextAlign(TextAlignment.LEFT);
 
         gc.fillText("分数: " + scoreManager.getScoreValue(), 10, 25);
@@ -268,7 +275,7 @@ public class GameView {
         gc.fillText("剩余小球: " + game.getBallList().size(), AbyssBrickGame.GAME_WIDTH - 10, 50);
 
         gc.setTextAlign(TextAlignment.CENTER);
-        gc.setFont(Font.font("Microsoft YaHei", 14));
+        gc.setFont(FONT_UI_SMALL);
         gc.fillText("鼠标/A D键移动挡板 | ESC暂停/菜单",
                 AbyssBrickGame.GAME_WIDTH / 2.0, 20);
     }
@@ -278,7 +285,7 @@ public class GameView {
         gc.fillRect(0, 0, AbyssBrickGame.GAME_WIDTH, AbyssBrickGame.GAME_HEIGHT);
 
         gc.setFill(Color.web("#FFD93D"));
-        gc.setFont(Font.font("Microsoft YaHei", 48));
+        gc.setFont(FONT_TITLE);
         gc.setTextAlign(TextAlignment.CENTER);
         gc.fillText("游戏暂停",
                 AbyssBrickGame.GAME_WIDTH / 2.0,
@@ -294,7 +301,7 @@ public class GameView {
         gc.fillRect(0, 0, AbyssBrickGame.GAME_WIDTH, AbyssBrickGame.GAME_HEIGHT);
 
         gc.setFill(Color.web("#FFD93D"));
-        gc.setFont(Font.font("Microsoft YaHei", 60));
+        gc.setFont(FONT_VICTORY);
         gc.setTextAlign(TextAlignment.CENTER);
         gc.fillText("关卡完成！",
                 AbyssBrickGame.GAME_WIDTH / 2.0,
@@ -306,7 +313,7 @@ public class GameView {
                 AbyssBrickGame.GAME_WIDTH / 2.0,
                 AbyssBrickGame.GAME_HEIGHT / 2.0 + 20);
 
-        gc.setFont(Font.font("Microsoft YaHei", 18));
+        gc.setFont(FONT_UI_MEDIUM);
         gc.fillText("点击鼠标左键跳过",
                 AbyssBrickGame.GAME_WIDTH / 2.0,
                 AbyssBrickGame.GAME_HEIGHT / 2.0 + 80);
@@ -317,13 +324,13 @@ public class GameView {
         gc.fillRect(0, 0, AbyssBrickGame.GAME_WIDTH, AbyssBrickGame.GAME_HEIGHT);
 
         gc.setFill(Color.RED);
-        gc.setFont(Font.font("Microsoft YaHei", 48));
+        gc.setFont(FONT_TITLE);
         gc.setTextAlign(TextAlignment.CENTER);
         gc.fillText("游戏结束", AbyssBrickGame.GAME_WIDTH / 2.0,
                 AbyssBrickGame.GAME_HEIGHT / 2.0 - 80);
 
         gc.setFill(Color.WHITE);
-        gc.setFont(Font.font("Microsoft YaHei", 24));
+        gc.setFont(FONT_UI_LARGE);
         gc.fillText("最终分数: " + game.getScoreManager().getScoreValue(),
                 AbyssBrickGame.GAME_WIDTH / 2.0,
                 AbyssBrickGame.GAME_HEIGHT / 2.0 - 20);
@@ -340,14 +347,14 @@ public class GameView {
 
         if (game.getCurrentScore() >= highScore && game.getCurrentScore() > 0) {
             gc.setFill(Color.web("#00FF88"));
-            gc.setFont(Font.font("Microsoft YaHei", 18));
+            gc.setFont(FONT_UI_MEDIUM);
             gc.fillText("新纪录！",
                     AbyssBrickGame.GAME_WIDTH / 2.0,
                     AbyssBrickGame.GAME_HEIGHT / 2.0 + 95);
         }
 
         gc.setFill(Color.WHITE);
-        gc.setFont(Font.font("Microsoft YaHei", 18));
+        gc.setFont(FONT_UI_MEDIUM);
         gc.fillText("点击鼠标重新开始", AbyssBrickGame.GAME_WIDTH / 2.0,
                 AbyssBrickGame.GAME_HEIGHT / 2.0 + 130);
     }
@@ -387,7 +394,7 @@ public class GameView {
             gc.strokeRoundRect(x, y, width, height, 10, 10);
 
             gc.setFill(Color.WHITE);
-            gc.setFont(Font.font("Microsoft YaHei", 20));
+            gc.setFont(FONT_UI_LARGE);
             gc.setTextAlign(TextAlignment.CENTER);
             gc.fillText(text, x + width / 2, y + height / 2 + 7);
         }

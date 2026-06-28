@@ -24,6 +24,9 @@ public class AbyssBrickGame {
     private List<VirtualBall> virtualBallList;
     private int aliveBrickCount = 0;
 
+    private final List<Ball> ballsToAddBuffer = new ArrayList<>();
+    private final List<VirtualBall> virtualBallsToRemoveBuffer = new ArrayList<>();
+
     private boolean gameRunning;
     private boolean countdownActive;
     private int currentLevel;
@@ -41,11 +44,17 @@ public class AbyssBrickGame {
     private boolean victoryScreen;
     private int victoryCountdownSeconds;
     private long lastVictoryCountdownTime;
+    
 
     private static final String SAVE_DIR_NAME = ".abyss_brickbreaker";
     private static final String SAVE_FILE_NAME = "max_unlocked_level.dat";
     private static final File SAVE_DIR = new File(System.getProperty("user.home"), SAVE_DIR_NAME);
     private static final File SAVE_FILE = new File(SAVE_DIR, SAVE_FILE_NAME);
+
+    private static final long COUNTDOWN_INTERVAL_MS = 1000;
+    private static final long VICTORY_COUNTDOWN_INTERVAL_NS = 1_000_000_000L;
+    private static final double MAX_DELTA_TIME_S = 0.1;
+    private static final double NORMAL_DELTA_TIME_S = 0.016;
 
     public AbyssBrickGame() {
         ensureSaveDirectoryExists();
@@ -101,8 +110,17 @@ public class AbyssBrickGame {
             this.selectingLevel = false;
             this.currentLevel = 1;
             this.lifeCount = GameConstant.LIVES_COUNT;
+            
+            ballList.clear();
+            virtualBallList.clear();
+            aliveBrickCount = 0;
+            
             levelManager.initLevelStyle(currentLevel);
             initLevelBrick(currentLevel);
+            
+            double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
+            baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, currentLevel);
+            
             startCountdown();
         }
     }
@@ -139,7 +157,7 @@ public class AbyssBrickGame {
         }
 
         long currentTime = System.currentTimeMillis();
-        if (currentTime - lastCountdownTime >= 1000) {
+        if (currentTime - lastCountdownTime >= COUNTDOWN_INTERVAL_MS) {
             countdownSeconds--;
             lastCountdownTime = currentTime;
 
@@ -169,7 +187,8 @@ public class AbyssBrickGame {
             virtualBallList.clear();
             virtualBallList.addAll(levelManager.generateVirtualBalls(level, brickList));
         } catch (Exception e) {
-            System.out.println("关卡初始化失败");
+            System.err.println("关卡初始化失败: " + e.getMessage());
+            e.printStackTrace();
             gameRunning = false;
         }
     }
@@ -196,7 +215,8 @@ public class AbyssBrickGame {
             checkGameStatus();
         } catch (Exception e) {
             gameRunning = false;
-            System.out.println("游戏异常结束");
+            System.err.println("游戏异常结束: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -211,7 +231,7 @@ public class AbyssBrickGame {
         }
 
         long currentTime = now;
-        if (currentTime - lastVictoryCountdownTime >= 1000000000L) {
+        if (currentTime - lastVictoryCountdownTime >= VICTORY_COUNTDOWN_INTERVAL_NS) {
             victoryCountdownSeconds--;
             lastVictoryCountdownTime = currentTime;
 
@@ -239,41 +259,36 @@ public class AbyssBrickGame {
                     saveMaxUnlockedLevel(maxUnlockedLevel);
                 }
                 scoreManager.nextLevel();
-                levelManager.initLevelStyle(currentLevel);
-
-                this.lifeCount = GameConstant.LIVES_COUNT;
-                ballList.clear();
-                initLevelBrick(currentLevel);
-
-                double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
-                baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, currentLevel);
-
-                AudioManager.getInstance().playLevelUpSound();
-
-                startCountdown();
+                initNextLevel();
             } else {
                 gameOverWin();
             }
         } else {
             currentLevel++;
             scoreManager.nextLevel();
-            levelManager.initLevelStyle(currentLevel);
-
-            this.lifeCount = GameConstant.LIVES_COUNT;
-            ballList.clear();
-            initLevelBrick(currentLevel);
-
-            double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
-            baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, currentLevel);
-
-            AudioManager.getInstance().playLevelUpSound();
-
-            startCountdown();
+            initNextLevel();
         }
     }
 
+    private void initNextLevel() {
+        levelManager.initLevelStyle(currentLevel);
+
+        this.lifeCount = GameConstant.LIVES_COUNT;
+        ballList.clear();
+        initLevelBrick(currentLevel);
+
+        double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
+        baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, currentLevel);
+
+        AudioManager.getInstance().playLevelUpSound();
+
+        startCountdown();
+    }
+
     private void checkAllCollision() {
-        List<Ball> ballsToAdd = new ArrayList<>();
+        ballsToAddBuffer.clear();
+        virtualBallsToRemoveBuffer.clear();
+        
         Iterator<Ball> ballIterator = ballList.iterator();
         while (ballIterator.hasNext()) {
             Ball ball = ballIterator.next();
@@ -287,7 +302,7 @@ public class AbyssBrickGame {
 
                 if (hpBefore > hpAfter && hpAfter <= 0) {
                     scoreManager.addScoreForBrick(brick);
-                    aliveBrickCount--; // 计数器递减
+                    aliveBrickCount--;
                 }
 
                 if (brick instanceof GiftBrick) {
@@ -301,13 +316,13 @@ public class AbyssBrickGame {
 
             List<Ball> newBalls = checkVirtualBallCollision(ball);
             if (newBalls != null && !newBalls.isEmpty()) {
-                ballsToAdd.addAll(newBalls);
+                ballsToAddBuffer.addAll(newBalls);
             }
         }
 
         ballList.removeIf(ball -> CollisionDetector.isBallFallOut(ball));
 
-        ballList.addAll(ballsToAdd);
+        ballList.addAll(ballsToAddBuffer);
 
         if (ballList.isEmpty() && lifeCount > 0) {
             lifeCount--;
@@ -339,7 +354,7 @@ public class AbyssBrickGame {
                 Ball newBall = new Ball(virtualBall.getX(), virtualBall.getY());
 
                 int newDx = (Math.random() > 0.5 ? 1 : -1) * GameConstant.BALL_SPEED_X;
-                newBall.setDy(-GameConstant.BALL_SPEED_Y); // 向上
+                newBall.setDy(-GameConstant.BALL_SPEED_Y);
                 newBall.setDx(newDx);
 
                 toAdd.add(newBall);
