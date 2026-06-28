@@ -104,7 +104,7 @@ public class ScoreFile {
         saveAll(highScore, maxUnlockedLevel, levelScores);
     }
 
-    private static boolean saveAll(int highScore, int maxUnlockedLevel, Map<Integer, Integer> levelScores) {
+    public static boolean saveAll(int highScore, int maxUnlockedLevel, Map<Integer, Integer> levelScores) {
         File file = new File(FILE_NAME);
         File parentDir = file.getParentFile();
         if (parentDir != null && !parentDir.exists()) {

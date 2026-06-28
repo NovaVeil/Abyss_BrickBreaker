@@ -114,6 +114,7 @@ public class AbyssBrickGame {
     
     public void startCampaignLevel(int level) {
         this.selectingLevel = false;
+        this.currentMode = GameMode.CAMPAIGN;
         this.currentLevel = level;
         this.selectedCampaignLevel = level;
         
@@ -393,6 +394,8 @@ public class AbyssBrickGame {
             return;
         }
 
+        System.out.println(">>> [DEBUG] nextLevel: currentMode=" + currentMode + ", currentLevel=" + currentLevel + ", maxUnlockedLevel=" + maxUnlockedLevel);
+
         if (currentMode == GameMode.CAMPAIGN) {
             int nextLevel = currentLevel + 1;
             if (nextLevel > maxUnlockedLevel) {
@@ -402,10 +405,7 @@ public class AbyssBrickGame {
 
         levelScores.put(currentLevel, scoreManager.getScoreValue());
         ScoreFile.saveLevelScore(currentLevel, scoreManager.getScoreValue(), maxUnlockedLevel);
-
-        if (currentMode == GameMode.CAMPAIGN) {
-            ScoreFile.saveMaxUnlockedLevel(maxUnlockedLevel);
-        }
+        ScoreFile.saveMaxUnlockedLevel(maxUnlockedLevel);
 
         victoryScreen = true;
         victoryCountdownSeconds = 3;
