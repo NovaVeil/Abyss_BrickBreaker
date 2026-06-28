@@ -173,8 +173,17 @@ public class GameView {
 
             if (brickImage != null) {
                 double alpha = 1.0;
-                if (brick instanceof HardBrick && brick.getHp() == 1) {
-                    alpha = 0.5;
+                
+                if (brick instanceof HardBrick) {
+                    if (brick.getHp() == 1) {
+                        alpha = 0.5;
+                    } else if (brick.getHp() == 2) {
+                        alpha = 0.75;
+                    }
+                } else if (brick instanceof GiftBrick) {
+                    int maxHp = 3;
+                    double currentHp = brick.getHp();
+                    alpha = 0.4 + (currentHp / maxHp) * 0.6;
                 }
 
                 gc.setGlobalAlpha(alpha);
