@@ -83,8 +83,6 @@ public class ScoreManager {
 
     public void resetAll() {
         this.score.set(0);
-        this.combo.set(0);
-        this.comboMultiplier.set(1.0);
         this.currentLevel = 1;
     }
 
