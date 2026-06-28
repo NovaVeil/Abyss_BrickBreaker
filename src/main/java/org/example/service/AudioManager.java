@@ -16,6 +16,7 @@ public class AudioManager {
     // 各种音效的 AudioClip 对象
     private AudioClip bgmClip;
     private AudioClip hitClip;
+    private AudioClip levelUpClip;
 
     /**
      * 私有构造方法，防止外部直接 new
@@ -41,15 +42,15 @@ public class AudioManager {
      * 从 resources 文件夹加载音效文件
      */
     private void loadSounds() {
-        // 使用 getClass().getResource() 来获取 resources 下的文件路径
         try {
             URL bgmUrl = getClass().getResource("/audios/bgm.wav");
             URL hitUrl = getClass().getResource("/audios/hit.mp3");
+            URL levelUpUrl = getClass().getResource("/audios/level_up.wav");
 
             if (bgmUrl != null) {
                 bgmClip = new AudioClip(bgmUrl.toString());
-                bgmClip.setCycleCount(AudioClip.INDEFINITE); // 设置为无限循环
-                bgmClip.setVolume(0.3); // 背景音乐音量调低一点
+                bgmClip.setCycleCount(AudioClip.INDEFINITE);
+                bgmClip.setVolume(0.3);
             } else {
                 throw new RuntimeException("错误：找不到背景音乐文件 bgm.mp3");
             }
@@ -59,6 +60,13 @@ public class AudioManager {
                 hitClip.setVolume(0.6);
             } else {
                 throw new RuntimeException("错误：找不到撞击音效文件 hit.wav");
+            }
+
+            if (levelUpUrl != null) {
+                levelUpClip = new AudioClip(levelUpUrl.toString());
+                levelUpClip.setVolume(0.7);
+            } else {
+                System.err.println("警告：找不到升级音效文件 level_up.wav");
             }
 
         } catch (Exception e) {
@@ -92,8 +100,16 @@ public class AudioManager {
      */
     public void playHitSound() {
         if (hitClip != null) {
-            // 每次播放都从头开始，适合短促音效
             hitClip.play();
+        }
+    }
+
+    /**
+     * 播放升级音效
+     */
+    public void playLevelUpSound() {
+        if (levelUpClip != null) {
+            levelUpClip.play();
         }
     }
 
@@ -102,7 +118,6 @@ public class AudioManager {
         if (bgmClip != null) {
             bgmClip.stop();
         }
-        // 其他音频资源清理...
         instance = null;
     }
 

@@ -138,6 +138,8 @@ public class GameController {
                     showingLevelSelection = false;
                     game.startCampaignLevel(selectedLevel);
                 }
+            } else if (game.isVictoryScreen()) {
+                game.skipVictoryScreen();
             } else if (showingPauseMenu) {
                 String action = view.handlePauseMenuClick(event.getX(), event.getY());
                 if (action != null) {

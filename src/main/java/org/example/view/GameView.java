@@ -99,7 +99,11 @@ public class GameView {
             drawPauseMenu();
         }
 
-        if (!game.isGameRunning() && game.getLifeCount() <= 0) {
+        if (game.isVictoryScreen()) {
+            drawVictoryOverlay();
+        }
+
+        if (!game.isGameRunning() && game.getLifeCount() <= 0 && !game.isVictoryScreen()) {
             drawGameOverOverlay();
         }
     }
@@ -283,6 +287,29 @@ public class GameView {
         resumeButton.render(gc, resumeHovered);
         restartButton.render(gc, restartHovered);
         exitButton.render(gc, exitHovered);
+    }
+
+    private void drawVictoryOverlay() {
+        gc.setFill(Color.rgb(0, 0, 0, 0.7));
+        gc.fillRect(0, 0, AbyssBrickGame.GAME_WIDTH, AbyssBrickGame.GAME_HEIGHT);
+
+        gc.setFill(Color.web("#FFD93D"));
+        gc.setFont(Font.font("Microsoft YaHei", 60));
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.fillText("关卡完成！",
+                AbyssBrickGame.GAME_WIDTH / 2.0,
+                AbyssBrickGame.GAME_HEIGHT / 2.0 - 80);
+
+        gc.setFill(Color.WHITE);
+        gc.setFont(Font.font("Microsoft YaHei", 36));
+        gc.fillText(String.valueOf(game.getVictoryCountdownSeconds()),
+                AbyssBrickGame.GAME_WIDTH / 2.0,
+                AbyssBrickGame.GAME_HEIGHT / 2.0 + 20);
+
+        gc.setFont(Font.font("Microsoft YaHei", 18));
+        gc.fillText("点击鼠标左键跳过",
+                AbyssBrickGame.GAME_WIDTH / 2.0,
+                AbyssBrickGame.GAME_HEIGHT / 2.0 + 80);
     }
 
     private void drawGameOverOverlay() {

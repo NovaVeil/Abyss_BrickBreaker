@@ -38,6 +38,9 @@ public class AbyssBrickGame {
     private boolean selectingLevel;
     private int selectedCampaignLevel;
     private int highScore = 0;
+    private boolean victoryScreen;
+    private int victoryCountdownSeconds;
+    private long lastVictoryCountdownTime;
 
     private static final String SAVE_DIR_NAME = ".abyss_brickbreaker";
     private static final String SAVE_FILE_NAME = "max_unlocked_level.dat";
@@ -108,9 +111,18 @@ public class AbyssBrickGame {
         this.selectingLevel = false;
         this.currentLevel = level;
         this.selectedCampaignLevel = level;
+        
+        ballList.clear();
+        virtualBallList.clear();
+        aliveBrickCount = 0;
+        
         levelManager.initLevelStyle(currentLevel);
         initLevelBrick(currentLevel);
         this.lifeCount = GameConstant.LIVES_COUNT;
+        
+        double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
+        baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, currentLevel);
+        
         startCountdown();
     }
 
@@ -169,6 +181,9 @@ public class AbyssBrickGame {
         try {
             updateCountdown();
             if (!gameRunning) {
+                if (victoryScreen) {
+                    updateVictoryCountdown(now);
+                }
                 return;
             }
 
@@ -182,6 +197,78 @@ public class AbyssBrickGame {
         } catch (Exception e) {
             gameRunning = false;
             System.out.println("游戏异常结束");
+        }
+    }
+
+    private void updateVictoryCountdown(long now) {
+        if (!victoryScreen) {
+            return;
+        }
+
+        if (lastVictoryCountdownTime == 0) {
+            lastVictoryCountdownTime = now;
+            return;
+        }
+
+        long currentTime = now;
+        if (currentTime - lastVictoryCountdownTime >= 1000000000L) {
+            victoryCountdownSeconds--;
+            lastVictoryCountdownTime = currentTime;
+
+            if (victoryCountdownSeconds <= 0) {
+                victoryScreen = false;
+                goToNextLevel();
+            }
+        }
+    }
+
+    public void skipVictoryScreen() {
+        if (victoryScreen) {
+            victoryScreen = false;
+            goToNextLevel();
+            System.out.println(">>> 跳过胜利画面，直接进入下一关");
+        }
+    }
+
+    private void goToNextLevel() {
+        if (currentMode == GameMode.CAMPAIGN) {
+            if (currentLevel < 10) {
+                currentLevel++;
+                if (currentLevel > maxUnlockedLevel) {
+                    maxUnlockedLevel = currentLevel;
+                    saveMaxUnlockedLevel(maxUnlockedLevel);
+                }
+                scoreManager.nextLevel();
+                levelManager.initLevelStyle(currentLevel);
+
+                this.lifeCount = GameConstant.LIVES_COUNT;
+                ballList.clear();
+                initLevelBrick(currentLevel);
+
+                double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
+                baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, currentLevel);
+
+                AudioManager.getInstance().playLevelUpSound();
+
+                startCountdown();
+            } else {
+                gameOverWin();
+            }
+        } else {
+            currentLevel++;
+            scoreManager.nextLevel();
+            levelManager.initLevelStyle(currentLevel);
+
+            this.lifeCount = GameConstant.LIVES_COUNT;
+            ballList.clear();
+            initLevelBrick(currentLevel);
+
+            double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
+            baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, currentLevel);
+
+            AudioManager.getInstance().playLevelUpSound();
+
+            startCountdown();
         }
     }
 
@@ -278,44 +365,18 @@ public class AbyssBrickGame {
             gameOver();
             return;
         }
-
-        if (currentMode == GameMode.CAMPAIGN) {
-            if (currentLevel < 10) {
-                currentLevel++;
-                if (currentLevel > maxUnlockedLevel) {
-                    maxUnlockedLevel = currentLevel;
-                    saveMaxUnlockedLevel(maxUnlockedLevel);
-                }
-                scoreManager.nextLevel();
-                levelManager.initLevelStyle(currentLevel);
-
-                this.lifeCount = GameConstant.LIVES_COUNT;
-                ballList.clear();
-                initLevelBrick(currentLevel);
-
-                double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
-                baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, currentLevel);
-
-
-                startCountdown();
-            } else {
-                gameOverWin();
-            }
-        } else {
-            currentLevel++;
-            scoreManager.nextLevel();
-            levelManager.initLevelStyle(currentLevel);
-
-            this.lifeCount = GameConstant.LIVES_COUNT;
-            ballList.clear();
-            initLevelBrick(currentLevel);
-
-            double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
-            baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, currentLevel);
-
-
-            startCountdown();
-        }
+        
+        victoryScreen = true;
+        victoryCountdownSeconds = 3;
+        lastVictoryCountdownTime = 0;
+        gameRunning = false;
+        
+        ballList.clear();
+        brickList.clear();
+        virtualBallList.clear();
+        aliveBrickCount = 0;
+        
+        System.out.println(">>> 关卡完成！显示胜利画面，3秒后进入第 " + (currentLevel + 1) + " 关");
     }
     
     private void gameOverWin() {
@@ -391,6 +452,14 @@ public class AbyssBrickGame {
         this.modeSelected = false;
         this.currentMode = null;
         this.levelManager.setGameMode(GameMode.CAMPAIGN);
+    }
+
+    public boolean isVictoryScreen() {
+        return victoryScreen;
+    }
+
+    public int getVictoryCountdownSeconds() {
+        return victoryCountdownSeconds;
     }
 
     public boolean isCountdownActive() {
