@@ -1,4 +1,11 @@
-package org.example;
+package org.example.model;
+
+import org.example.service.LevelManager;
+import org.example.service.ScoreFile;
+import org.example.service.ScoreManager;
+import org.example.util.GameConstant;
+import org.example.service.AudioManager;
+import org.example.util.CollisionDetector;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -161,7 +168,7 @@ public class AbyssBrickGame {
         while (ballIterator.hasNext()) {
             Ball ball = ballIterator.next();
 
-            CollisionDetector.checkBaffileCollision(ball, baffle);
+            CollisionDetector.checkBaffleCollision(ball, baffle);
 
             for (Brick brick : brickList) {
                 int hpBefore = brick.getHp();
@@ -317,6 +324,7 @@ public class AbyssBrickGame {
         currentMode = null;
         selectingLevel = false;
         selectedCampaignLevel = 1;
+        levelManager.setGameMode(GameMode.CAMPAIGN);
 
         ballList.clear();
         brickList.clear();
@@ -328,6 +336,7 @@ public class AbyssBrickGame {
     public void resetModeSelection() {
         this.modeSelected = false;
         this.currentMode = null;
+        this.levelManager.setGameMode(GameMode.CAMPAIGN);
     }
 
     public boolean isCountdownActive() {
@@ -395,5 +404,9 @@ public class AbyssBrickGame {
 
     public int getCurrentScore() {
         return scoreManager.getScoreValue();
+    }
+
+    public LevelManager getLevelManager() {
+        return levelManager;
     }
 }

@@ -1,10 +1,11 @@
-package org.example;
+package org.example.view;
 
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
+import org.example.util.GameConstant;
 
 public class LevelSelector {
     private Canvas canvas;

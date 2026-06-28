@@ -1,6 +1,8 @@
-package org.example;
+package org.example.view;
 
 import javafx.scene.image.Image;
+import org.example.model.ThemeType;
+
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;

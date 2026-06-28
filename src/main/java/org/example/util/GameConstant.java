@@ -1,6 +1,4 @@
-package org.example;
-
-import javafx.scene.paint.Color;
+package org.example.util;
 
 // 设置游戏基本常量
 public class GameConstant {

@@ -1,4 +1,4 @@
-package org.example;
+package org.example.view;
 
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -6,8 +6,8 @@ import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
-
-import java.io.InputStream;
+import org.example.util.GameConstant;
+import org.example.model.GameMode;
 
 public class GameModeSelector {
     private Canvas canvas;
@@ -65,12 +65,12 @@ public class GameModeSelector {
             gc.drawImage(
                     ImageLoader.BG_MENU,
                     0, 0,
-                    AbyssBrickGame.GAME_WIDTH,
-                    AbyssBrickGame.GAME_HEIGHT
+                    GameConstant.GAME_WIDTH,
+                    GameConstant.GAME_HEIGHT
             );
         } else {
             gc.setFill(javafx.scene.paint.Color.BLACK);
-            gc.fillRect(0, 0, AbyssBrickGame.GAME_WIDTH, AbyssBrickGame.GAME_HEIGHT);
+            gc.fillRect(0, 0, GameConstant.GAME_WIDTH, GameConstant.GAME_HEIGHT);
         }
         
         gc.setFill(Color.web("#AAAAAA"));

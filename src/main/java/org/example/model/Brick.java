@@ -1,4 +1,6 @@
-package org.example;
+package org.example.model;
+
+import org.example.util.GameConstant;
 
 //父类 brick（抽象类）
 public abstract class Brick {

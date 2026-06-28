@@ -1,4 +1,4 @@
-package org.example;
+package org.example.model;
 //枚举类：两种游戏模式
 public enum GameMode {
     CAMPAIGN("闯关模式", "挑战精心设计的图形关卡，每关图案不同"),

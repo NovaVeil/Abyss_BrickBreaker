@@ -1,6 +1,7 @@
-package org.example;
+package org.example.model;
 
 import javafx.scene.paint.Color;
+import org.example.util.GameConstant;
 
 public class Ball {
     //小球属性
@@ -22,7 +23,7 @@ public class Ball {
 
     // 使用默认常量创建小球的构造方法
     public Ball(double x, double y) {
-        this(x, y, GameConstant.BALL_RADIUS, 
+        this(x, y, GameConstant.BALL_RADIUS,
              GameConstant.BALL_SPEED_X, 
              GameConstant.BALL_SPEED_Y, Color.WHITE);
     }

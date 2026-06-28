@@ -1,6 +1,6 @@
-package org.example;
+package org.example.model;
 
-public class GiftBrick extends  Brick {
+public class GiftBrick extends Brick {
     private boolean giftTriggered = false;
 
     public GiftBrick(double x, double y) {

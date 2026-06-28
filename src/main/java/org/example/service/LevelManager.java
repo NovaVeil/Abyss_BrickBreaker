@@ -1,6 +1,8 @@
-package org.example;
+package org.example.service;
 
 import javafx.scene.paint.Color;
+import org.example.model.*;
+import org.example.util.GameConstant;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -124,14 +126,13 @@ public class LevelManager {
             case 2:
                 return generateDiamondPatternBricks(level);
             case 3:
-                return generateArrowPatternBricks(level);
+                return generateWindmillPatternBricks(level);
             case 4:
                 return generateCirclePatternBricks(level);
             case 0:
                 return generateStarPatternBricks(level);
-            default:
-                return generateHeartPatternBricks(level);
         }
+        return generateHeartPatternBricks(level);
     }
 
     // Helper: 根据关卡难度返回三种主要类型的概率（normal, hard, triangle），礼物砖概率为剩余
@@ -188,29 +189,35 @@ public class LevelManager {
 
     // 高级主题生成器（用于第6-10关），每个主题用不同的生成算法，密度和难度更高
     private List<Brick> generateAdvancedTheme1(int level) {
-        // 以爱心图案为基础，叠加一圈外延，间距更小，密度更高
-        List<Brick> bricks = generateHeartPatternBricks(level);
+        List<Brick> bricks = new ArrayList<>();
         double brickW = GameConstant.BRICK_WIDTH;
         double brickH = GameConstant.BRICK_HEIGHT;
-        double gap = 6;
+        double gap = GameConstant.BRICK_GAP;
         double centerX = GameConstant.GAME_WIDTH / 2.0;
-        double startY = 40;
+        double centerY = 180;
         double[] rates = getTypeRates(level, true);
+        double cellSize = brickW + gap;
 
-        // 外环：中心上下左右小十字
-        double[][] offsets = {{0, - (brickH + gap)}, {0, (brickH + gap)}, {-(brickW + gap), 0}, {(brickW + gap), 0}};
-        for (double[] off : offsets) {
-            double x = centerX + off[0];
-            double y = startY + 2 * (brickH + gap) + off[1];
-            bricks.add(createBrickByRates(x, y, rates));
-        }
+        double scale = 1.0 + (level - 1) * 0.15;
+        int gridW = (int)(9 * scale);
+        int gridH = (int)(8 * scale);
 
-        // 在心形主要区域附近增加少量随机砖块以提高数量
-        for (int i = 0; i < 12; i++) {
-            double x = centerX + (Math.random() - 0.5) * 220;
-            double y = startY + Math.random() * 180;
-            if (x > 10 && x < GameConstant.GAME_WIDTH - 10) {
-                bricks.add(createBrickByRates(x, y, rates));
+        for (int row = 0; row < gridH; row++) {
+            for (int col = 0; col < gridW; col++) {
+                double nx = (col - gridW / 2.0) / (gridW / 2.5);
+                double ny = -(row - gridH / 2.0) / (gridH / 3.2);
+                double a = nx * nx + ny * ny - 1;
+                double heartValue = a * a * a - nx * nx * ny * ny * ny;
+
+                if (heartValue <= 0) {
+                    double x = centerX - (gridW / 2.0) * cellSize + col * cellSize;
+                    double y = centerY - (gridH / 2.0) * cellSize + row * cellSize;
+                    if (x >= 5 && x + brickW <= GameConstant.GAME_WIDTH - 5 && y >= 5 && y + brickH <= GameConstant.GAME_HEIGHT - 80) {
+                        if (!overlapsExisting(bricks, x, y, brickW, brickH)) {
+                            bricks.add(createBrickByRates(x, y, rates));
+                        }
+                    }
+                }
             }
         }
 
@@ -218,81 +225,149 @@ public class LevelManager {
     }
 
     private List<Brick> generateAdvancedTheme2(int level) {
-        // 菱形基础上做多层填充，外层出现更多坚硬砖
         List<Brick> bricks = new ArrayList<>();
-        double centerX = GameConstant.GAME_WIDTH / 2.0;
         double brickW = GameConstant.BRICK_WIDTH;
         double brickH = GameConstant.BRICK_HEIGHT;
-        double gap = 6;
+        double gap = GameConstant.BRICK_GAP;
+        double centerX = GameConstant.GAME_WIDTH / 2.0;
+        double centerY = 180;
+        double cellSize = brickW + gap;
         double[] rates = getTypeRates(level, true);
 
-        int layers = 4 + level / 3; // 增加层数
-        for (int layer = 0; layer < layers; layer++) {
-            int cols = 7 + layer;
-            for (int c = 0; c < cols; c++) {
-                double x = centerX - (cols / 2.0) * (brickW + gap) + c * (brickW + gap);
-                double y = 50 + layer * (brickH + gap);
-                bricks.add(createBrickByRates(x, y, rates));
+        int halfSize = 4 + (level - 6);
+        for (int row = -halfSize; row <= halfSize; row++) {
+            for (int col = -halfSize; col <= halfSize; col++) {
+                int dx = Math.abs(col);
+                int dy = Math.abs(row);
+                if (dx + dy <= halfSize) {
+                    double x = centerX + col * cellSize - brickW / 2;
+                    double y = centerY + row * cellSize - brickH / 2;
+                    if (x >= 5 && x + brickW <= GameConstant.GAME_WIDTH - 5 && y >= 5 && y + brickH <= GameConstant.GAME_HEIGHT - 80) {
+                        if (!overlapsExisting(bricks, x, y, brickW, brickH)) {
+                            if (dx + dy <= 1) {
+                                bricks.add(new GiftBrick(x, y));
+                            } else {
+                                double[] localRates = rates.clone();
+                                if (dx + dy == halfSize) {
+                                    localRates[1] = Math.max(localRates[1], 0.40);
+                                }
+                                bricks.add(createBrickByRates(x, y, localRates));
+                            }
+                        }
+                    }
+                }
             }
-        }
-
-        // 随机插入一些礼物砖
-        for (int i = 0; i < 4; i++) {
-            double x = 80 + Math.random() * (GameConstant.GAME_WIDTH - 160);
-            double y = 60 + Math.random() * 200;
-            bricks.add(new GiftBrick(x, y));
         }
 
         return bricks;
     }
 
     private List<Brick> generateAdvancedTheme3(int level) {
-        // 圆形/环形叠加：更密集的圆环与中心聚集
         List<Brick> bricks = new ArrayList<>();
-        double centerX = GameConstant.GAME_WIDTH / 2.0;
-        double centerY = 150;
         double brickW = GameConstant.BRICK_WIDTH;
         double brickH = GameConstant.BRICK_HEIGHT;
+        double gap = GameConstant.BRICK_GAP;
+        double centerX = GameConstant.GAME_WIDTH / 2.0;
+        double centerY = 180;
+        double cellSize = brickW + gap;
         double[] rates = getTypeRates(level, true);
 
-        int rings = 3 + level / 3;
-        for (int r = 0; r < rings; r++) {
-            double radius = 60 + r * 30;
-            int segments = 10 + r * 2;
-            for (int s = 0; s < segments; s++) {
-                double angle = 2 * Math.PI * s / segments;
-                double x = centerX + Math.cos(angle) * radius - brickW / 2;
-                double y = centerY + Math.sin(angle) * radius - brickH / 2;
-                bricks.add(createBrickByRates(x, y, rates));
+        double baseRadius = 110 + (level - 6) * 15;
+        double innerRadius = baseRadius * 0.55;
+        int gridHalf = (int) Math.ceil(baseRadius / cellSize) + 1;
+
+        for (int row = -gridHalf; row <= gridHalf; row++) {
+            for (int col = -gridHalf; col <= gridHalf; col++) {
+                double cellCX = centerX + col * cellSize;
+                double cellCY = centerY + row * cellSize;
+                double dx = cellCX - centerX;
+                double dy = cellCY - centerY;
+                double distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance <= baseRadius && distance >= innerRadius) {
+                    double x = cellCX - brickW / 2;
+                    double y = cellCY - brickH / 2;
+                    if (x >= 5 && x + brickW <= GameConstant.GAME_WIDTH - 5 && y >= 5 && y + brickH <= GameConstant.GAME_HEIGHT - 80) {
+                        if (!overlapsExisting(bricks, x, y, brickW, brickH)) {
+                            bricks.add(createBrickByRates(x, y, rates));
+                        }
+                    }
+                }
             }
         }
 
-        // 中心密集填充
-        for (int i = 0; i < 8 + level; i++) {
-            double x = centerX + (Math.random() - 0.5) * 80;
-            double y = centerY + (Math.random() - 0.5) * 80;
-            bricks.add(createBrickByRates(x, y, rates));
+        double fillRadius = innerRadius * 0.6;
+        int fillHalf = (int) Math.ceil(fillRadius / cellSize);
+        for (int row = -fillHalf; row <= fillHalf; row++) {
+            for (int col = -fillHalf; col <= fillHalf; col++) {
+                double cellCX = centerX + col * cellSize;
+                double cellCY = centerY + row * cellSize;
+                double dx = cellCX - centerX;
+                double dy = cellCY - centerY;
+                double distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance <= fillRadius) {
+                    double x = cellCX - brickW / 2;
+                    double y = cellCY - brickH / 2;
+                    if (x >= 5 && x + brickW <= GameConstant.GAME_WIDTH - 5 && y >= 5 && y + brickH <= GameConstant.GAME_HEIGHT - 80) {
+                        if (!overlapsExisting(bricks, x, y, brickW, brickH)) {
+                            bricks.add(new GiftBrick(x, y));
+                        }
+                    }
+                }
+            }
         }
 
         return bricks;
     }
 
     private List<Brick> generateAdvancedTheme4(int level) {
-        // 箭头/向心排列叠加，增加行数并混合类型
         List<Brick> bricks = new ArrayList<>();
-        double centerX = GameConstant.GAME_WIDTH / 2.0;
         double brickW = GameConstant.BRICK_WIDTH;
         double brickH = GameConstant.BRICK_HEIGHT;
-        double gap = 6;
+        double gap = GameConstant.BRICK_GAP;
+        double centerX = GameConstant.GAME_WIDTH / 2.0;
+        double centerY = 180;
+        double cellSize = brickW + gap;
         double[] rates = getTypeRates(level, true);
 
-        int rows = 8 + level / 2;
-        for (int row = 0; row < rows; row++) {
-            int cols = 7 + (row % 3);
-            for (int col = 0; col < cols; col++) {
-                double x = centerX - (cols / 2.0) * (brickW + gap) + col * (brickW + gap);
-                double y = 40 + row * (brickH + gap);
-                bricks.add(createBrickByRates(x, y, rates));
+        int bladeLen = 4 + level / 2;
+        int bladeW = 2 + level / 5;
+        int gridHalf = bladeLen + 2;
+
+        for (int row = -gridHalf; row <= gridHalf; row++) {
+            for (int col = -gridHalf; col <= gridHalf; col++) {
+                if (col == 0 && row == 0) {
+                    double x = centerX - brickW / 2;
+                    double y = centerY - brickH / 2;
+                    bricks.add(new GiftBrick(x, y));
+                    continue;
+                }
+
+                boolean inBlade = false;
+                int[] dirs = {0, 1, 2, 3};
+                for (int d : dirs) {
+                    int along, perp;
+                    switch (d) {
+                        case 0: along = col;  perp = row;  break;
+                        case 1: along = -row; perp = col;  break;
+                        case 2: along = -col; perp = -row; break;
+                        default: along = row;  perp = -col; break;
+                    }
+                    if (along >= 1 && along <= bladeLen && Math.abs(perp) <= bladeW) {
+                        inBlade = true;
+                        break;
+                    }
+                }
+
+                if (inBlade) {
+                    double x = centerX + col * cellSize - brickW / 2;
+                    double y = centerY + row * cellSize - brickH / 2;
+                    if (x >= 5 && x + brickW <= GameConstant.GAME_WIDTH - 5 && y >= 5 && y + brickH <= GameConstant.GAME_HEIGHT - 80) {
+                        if (!overlapsExisting(bricks, x, y, brickW, brickH)) {
+                            bricks.add(createBrickByRates(x, y, rates));
+                        }
+                    }
+                }
             }
         }
 
@@ -300,31 +375,64 @@ public class LevelManager {
     }
 
     private List<Brick> generateAdvancedTheme5(int level) {
-        // 星形加强版：在原星形的基础上增加外圈与随机填充
-        List<Brick> base = generateStarPatternBricks(level);
-        List<Brick> bricks = new ArrayList<>(base);
+        List<Brick> bricks = new ArrayList<>();
         double brickW = GameConstant.BRICK_WIDTH;
         double brickH = GameConstant.BRICK_HEIGHT;
+        double gap = GameConstant.BRICK_GAP;
+        double centerX = GameConstant.GAME_WIDTH / 2.0;
+        double centerY = 180;
+        double cellSize = brickW + gap;
         double[] rates = getTypeRates(level, true);
 
-        // 增加外圈星点
-        double centerX = GameConstant.GAME_WIDTH / 2.0;
-        double startY = 60;
-        for (int i = 0; i < 12; i++) {
-            double x = centerX + (Math.random() - 0.5) * 340;
-            double y = startY + Math.random() * 220;
-            bricks.add(createBrickByRates(x, y, rates));
+        double baseRadius = 110 + (level - 6) * 12;
+        double innerRadius = baseRadius * 0.38;
+        int gridHalf = (int) Math.ceil(baseRadius / cellSize) + 1;
+
+        for (int row = -gridHalf; row <= gridHalf; row++) {
+            for (int col = -gridHalf; col <= gridHalf; col++) {
+                double cellCX = centerX + col * cellSize;
+                double cellCY = centerY + row * cellSize;
+                double dx = cellCX - centerX;
+                double dy = cellCY - centerY;
+                double r = Math.sqrt(dx * dx + dy * dy);
+
+                if (r > 0 && r <= baseRadius) {
+                    double angle = Math.atan2(dy, dx);
+                    if (angle < 0) angle += 2 * Math.PI;
+                    double starR = innerRadius + (baseRadius - innerRadius) * Math.pow(Math.abs(Math.cos(2.5 * angle)), 1.5);
+                    if (r <= starR) {
+                        double x = cellCX - brickW / 2;
+                        double y = cellCY - brickH / 2;
+                        if (x >= 5 && x + brickW <= GameConstant.GAME_WIDTH - 5 && y >= 5 && y + brickH <= GameConstant.GAME_HEIGHT - 80) {
+                            if (!overlapsExisting(bricks, x, y, brickW, brickH)) {
+                                bricks.add(createBrickByRates(x, y, rates));
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         return bricks;
     }
+
+    private boolean overlapsExisting(List<Brick> bricks, double x, double y, double w, double h) {
+        for (Brick brick : bricks) {
+            if (x < brick.getX() + brick.getWidth() && x + w > brick.getX() &&
+                y < brick.getY() + brick.getHeight() && y + h > brick.getY()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     //无尽模式：生成高密度随机砖块
 
     private List<Brick> generateEndlessBricks(int level) {
         List<Brick> bricks = new ArrayList<>();
 
         // 无尽模式：更多行列，更高密度
-        int colCount = 14 + (level / 2); // 第1关14列，之后每2关+1列
+        int colCount = GameConstant.ENDLESS_BRICK_COLS_BASE + (level / 2); // 第1关14列，之后每2关+1列
         if (colCount > 20) colCount = 20; // 最多20列
         
         int rowCount = 6 + level / 2; // 第1关6行，之后每2关+1行
@@ -387,137 +495,125 @@ public class LevelManager {
 
         return bricks;
     }
-  //生成圆形图案
+  //生成圆形图案（使用距离公式循环判定，半径随关卡递增）
     public List<Brick> generateCirclePatternBricks(int level) {
         List<Brick> bricks = new ArrayList<>();
-        
+
         double centerX = GameConstant.GAME_WIDTH / 2.0;
-        double centerY = 150;
-        double radius = 120;
+        double centerY = 180;
         double brickW = GameConstant.BRICK_WIDTH;
         double brickH = GameConstant.BRICK_HEIGHT;
-        double gap = 8;
-        
-        // 在圆形区域内生成砖块
-        for (int row = 0; row < 8; row++) {
-            for (int col = 0; col < 12; col++) {
-                double x = centerX - 6 * (brickW + gap) + col * (brickW + gap);
-                double y = centerY - 4 * (brickH + gap) + row * (brickH + gap);
-                
-                // 计算到圆心的距离
-                double dx = x + brickW / 2 - centerX;
-                double dy = y + brickH / 2 - centerY;
+        double gap = GameConstant.BRICK_GAP;
+
+        double baseRadius = 100 + (level - 1) * 10;
+        double cellSize = brickW + gap;
+        int halfCells = (int) Math.ceil(baseRadius / cellSize) + 1;
+
+        for (int row = -halfCells; row <= halfCells; row++) {
+            for (int col = -halfCells; col <= halfCells; col++) {
+                double cellCX = centerX + col * cellSize;
+                double cellCY = centerY + row * cellSize;
+                double dx = cellCX - centerX;
+                double dy = cellCY - centerY;
                 double distance = Math.sqrt(dx * dx + dy * dy);
-                
-                // 如果在圆形范围内，则生成砖块
-                if (distance <= radius) {
-                    double normalRate = 0.50;
-                    double hardRate = 0.75;
-                    
-                    if (level >= 3) {
-                        normalRate = 0.40;
-                        hardRate = 0.65;
+
+                if (distance <= baseRadius) {
+                    double x = cellCX - brickW / 2;
+                    double y = cellCY - brickH / 2;
+                    if (x >= 5 && x + brickW <= GameConstant.GAME_WIDTH - 5 && y >= 5 && y + brickH <= GameConstant.GAME_HEIGHT - 80) {
+                        double[] rates = getTypeRates(level, false);
+                        bricks.add(createBrickByRates(x, y, rates));
                     }
-                    
-                    double[] rates = getTypeRates(level, false);
-                    bricks.add(createBrickByRates(x, y, rates));
                 }
             }
         }
-        
+
         return bricks;
     }
-    //生成星形图案
+
+    //生成星形图案（使用极坐标五星方程循环生成，尺寸随关卡递增）
     public List<Brick> generateStarPatternBricks(int level) {
         List<Brick> bricks = new ArrayList<>();
-        
+
         double centerX = GameConstant.GAME_WIDTH / 2.0;
-        double startY = 60;
+        double centerY = 180;
         double brickW = GameConstant.BRICK_WIDTH;
         double brickH = GameConstant.BRICK_HEIGHT;
-        double gap = 8;
-        
-        // 五角星图案（简化版）
-        int[][] starPattern = {
-            {0, 0, 0, 0, 1, 0, 0, 0, 0},
-            {0, 0, 0, 1, 1, 1, 0, 0, 0},
-            {0, 0, 1, 1, 1, 1, 1, 0, 0},
-            {1, 1, 1, 1, 1, 1, 1, 1, 1},
-            {0, 1, 1, 1, 1, 1, 1, 1, 0},
-            {0, 0, 1, 1, 1, 1, 1, 0, 0},
-            {0, 0, 0, 1, 1, 1, 0, 0, 0},
-            {0, 0, 1, 0, 0, 0, 1, 0, 0},
-            {0, 1, 0, 0, 0, 0, 0, 1, 0}
-        };
-        
-        for (int row = 0; row < starPattern.length; row++) {
-            for (int col = 0; col < starPattern[row].length; col++) {
-                if (starPattern[row][col] == 1) {
-                    double x = centerX - (4.5 * (brickW + gap)) + col * (brickW + gap);
-                    double y = startY + row * (brickH + gap);
-                    
-                    double[] rates = getTypeRates(level, false);
-                    bricks.add(createBrickByRates(x, y, rates));
+        double gap = GameConstant.BRICK_GAP;
+
+        double baseRadius = 100 + (level - 1) * 10;
+        double innerRadius = baseRadius * 0.38;
+        double cellSize = brickW + gap;
+        int gridHalf = (int) Math.ceil(baseRadius / cellSize) + 1;
+
+        for (int row = -gridHalf; row <= gridHalf; row++) {
+            for (int col = -gridHalf; col <= gridHalf; col++) {
+                double cellCX = centerX + col * cellSize;
+                double cellCY = centerY + row * cellSize;
+                double dx = cellCX - centerX;
+                double dy = cellCY - centerY;
+                double r = Math.sqrt(dx * dx + dy * dy);
+
+                if (r > 0 && r <= baseRadius) {
+                    double angle = Math.atan2(dy, dx);
+                    if (angle < 0) angle += 2 * Math.PI;
+                    double starR = innerRadius + (baseRadius - innerRadius) * Math.pow(Math.abs(Math.cos(2.5 * angle)), 1.5);
+                    if (r <= starR) {
+                        double x = cellCX - brickW / 2;
+                        double y = cellCY - brickH / 2;
+                        if (x >= 5 && x + brickW <= GameConstant.GAME_WIDTH - 5 && y >= 5 && y + brickH <= GameConstant.GAME_HEIGHT - 80) {
+                            double[] rates = getTypeRates(level, false);
+                            bricks.add(createBrickByRates(x, y, rates));
+                        }
+                    }
                 }
             }
         }
-        
+
         return bricks;
     }
-  /* 生成爱心形状的砖块布局
+
+  /* 生成爱心形状的砖块布局（使用心形隐式方程循环生成，尺寸随关卡递增）
    @param level 关卡编号
    @return 爱心形状的砖块列表*/
     public List<Brick> generateHeartPatternBricks(int level) {
         List<Brick> bricks = new ArrayList<>();
-        
+
         double centerX = GameConstant.GAME_WIDTH / 2.0;
-        double startY = 60;
+        double centerY = 180;
         double brickW = GameConstant.BRICK_WIDTH;
         double brickH = GameConstant.BRICK_HEIGHT;
-        double gap = 8;
-       /* 爱心图案设计（使用网格坐标）
-        第1行：   X X     X X
-        第2行： X X X X X X X
-        第3行： X X X X X X X
-        第4行：   X X X X X
-        第5行：     X X X
-        第6行：       X*/
-        int[][] heartPattern = {
-            {0, 1, 0, 0, 1, 0, 0},  // 第1行
-            {1, 1, 1, 1, 1, 1, 1},  // 第2行
-            {1, 1, 1, 1, 1, 1, 1},  // 第3行
-            {0, 1, 1, 1, 1, 1, 0},  // 第4行
-            {0, 0, 1, 1, 1, 0, 0},  // 第5行
-            {0, 0, 0, 1, 0, 0, 0}   // 第6行
-        };
-        
-        // 砖块类型概率
-        double normalRate = 0.5;
-        double hardRate = 0.75;
-        double triangleRate = 0.10;
-        
-        if (level >= 3) {
-            normalRate = 0.40;
-            hardRate = 0.65;
-        }
-        
-        for (int row = 0; row < heartPattern.length; row++) {
-            for (int col = 0; col < heartPattern[row].length; col++) {
-                if (heartPattern[row][col] == 1) {
-                    double x = centerX - (3.5 * (brickW + gap)) + col * (brickW + gap);
-                    double y = startY + row * (brickH + gap);
-                    
-                    double[] rates = getTypeRates(level, false);
-                    bricks.add(createBrickByRates(x, y, rates));
+        double gap = GameConstant.BRICK_GAP;
+
+        double scale = 1.0 + (level - 1) * 0.15;
+        int gridW = (int)(7 * scale);
+        int gridH = (int)(6 * scale);
+        double cellSize = brickW + gap;
+
+        for (int row = 0; row < gridH; row++) {
+            for (int col = 0; col < gridW; col++) {
+                double nx = (col - gridW / 2.0) / (gridW / 2.5);
+                double ny = -(row - gridH / 2.0) / (gridH / 2.5);
+                double a = nx * nx + ny * ny - 1;
+                double heartValue = a * a * a - nx * nx * ny * ny * ny;
+
+                if (heartValue <= 0) {
+                    double x = centerX - (gridW / 2.0) * cellSize + col * cellSize;
+                    double y = centerY - (gridH / 2.0) * cellSize + row * cellSize;
+                    if (x >= 5 && x + brickW <= GameConstant.GAME_WIDTH - 5 && y >= 5 && y + brickH <= GameConstant.GAME_HEIGHT - 80) {
+                        double[] rates = getTypeRates(level, false);
+                        bricks.add(createBrickByRates(x, y, rates));
+                    }
                 }
             }
         }
-        
+
         return bricks;
     }
+
     /*生成自定义图形砖块（支持多种图案）
     @param level 关卡编号
-    @param patternType 图案类型 ("heart", "diamond", "arrow")
+    @param patternType 图案类型 ("heart", "diamond", "windmill")
     @return 图形砖块列表*/
     public List<Brick> generatePatternBricks(int level, String patternType) {
         switch (patternType.toLowerCase()) {
@@ -525,87 +621,105 @@ public class LevelManager {
                 return generateHeartPatternBricks(level);
             case "diamond":
                 return generateDiamondPatternBricks(level);
-            case "arrow":
-                return generateArrowPatternBricks(level);
+            case "windmill":
+                return generateWindmillPatternBricks(level);
             default:
                 return generateBricks(level);
         }
     }
-    //生成菱形图案
+
+    //生成菱形图案（使用曼哈顿距离循环判定，尺寸随关卡递增）
     public List<Brick> generateDiamondPatternBricks(int level) {
         List<Brick> bricks = new ArrayList<>();
-        
+
         double centerX = GameConstant.GAME_WIDTH / 2.0;
-        double startY = 60;
+        double centerY = 180;
         double brickW = GameConstant.BRICK_WIDTH;
         double brickH = GameConstant.BRICK_HEIGHT;
-        double gap = 8;
-        
-        int[][] diamondPattern = {
-            {0, 0, 0, 1, 0, 0, 0},
-            {0, 0, 1, 1, 1, 0, 0},
-            {0, 1, 1, 1, 1, 1, 0},
-            {1, 1, 1, 1, 1, 1, 1},
-            {0, 1, 1, 1, 1, 1, 0},
-            {0, 0, 1, 1, 1, 0, 0},
-            {0, 0, 0, 1, 0, 0, 0}
-        };
-        
-        for (int row = 0; row < diamondPattern.length; row++) {
-            for (int col = 0; col < diamondPattern[row].length; col++) {
-                if (diamondPattern[row][col] == 1) {
-                    double x = centerX - (3 * (brickW + gap)) + col * (brickW + gap);
-                    double y = startY + row * (brickH + gap);
-                    
-                    if (row == 0 || row == diamondPattern.length - 1) {
-                        bricks.add(new GiftBrick(x, y));
-                    } else if (row == 1 || row == diamondPattern.length - 2) {
-                        // 外层第二行优先为坚硬砖，但仍用概率以便随关卡变化
-                        double[] rates = getTypeRates(level, false);
-                        // 提高 hard 的权重临时替换
-                        rates[1] = Math.max(rates[1], 0.35);
-                        bricks.add(createBrickByRates(x, y, rates));
-                    } else {
+        double gap = GameConstant.BRICK_GAP;
+
+        int halfSize = 3 + (level - 1) / 2;
+        double cellSize = brickW + gap;
+
+        for (int row = -halfSize; row <= halfSize; row++) {
+            for (int col = -halfSize; col <= halfSize; col++) {
+                int dx = Math.abs(col);
+                int dy = Math.abs(row);
+
+                if (dx + dy <= halfSize) {
+                    double x = centerX + col * cellSize - brickW / 2;
+                    double y = centerY + row * cellSize - brickH / 2;
+
+                    if (x >= 5 && x + brickW <= GameConstant.GAME_WIDTH - 5 && y >= 5 && y + brickH <= GameConstant.GAME_HEIGHT - 80) {
+                        if (dx + dy == halfSize) {
+                            double[] rates = getTypeRates(level, false);
+                            rates[1] = Math.max(rates[1], 0.35);
+                            bricks.add(createBrickByRates(x, y, rates));
+                        } else if (dx + dy <= 1) {
+                            bricks.add(new GiftBrick(x, y));
+                        } else {
+                            double[] rates = getTypeRates(level, false);
+                            bricks.add(createBrickByRates(x, y, rates));
+                        }
+                    }
+                }
+            }
+        }
+
+        return bricks;
+    }
+
+    //生成风车图案（使用旋转矩形算法循环生成四个叶片，尺寸随关卡递增）
+    public List<Brick> generateWindmillPatternBricks(int level) {
+        List<Brick> bricks = new ArrayList<>();
+
+        double centerX = GameConstant.GAME_WIDTH / 2.0;
+        double centerY = 180;
+        double brickW = GameConstant.BRICK_WIDTH;
+        double brickH = GameConstant.BRICK_HEIGHT;
+        double gap = GameConstant.BRICK_GAP;
+        double cellSize = brickW + gap;
+
+        int bladeLen = 3 + level / 2;
+        int bladeW = 1 + level / 5;
+        int gridHalf = bladeLen + 1;
+
+        for (int row = -gridHalf; row <= gridHalf; row++) {
+            for (int col = -gridHalf; col <= gridHalf; col++) {
+                if (col == 0 && row == 0) {
+                    double x = centerX - brickW / 2;
+                    double y = centerY - brickH / 2;
+                    bricks.add(new GiftBrick(x, y));
+                    continue;
+                }
+
+                boolean inBlade = false;
+                int[] dirs = {0, 1, 2, 3};
+                for (int d : dirs) {
+                    int along, perp;// along: 沿叶片方向的距离，perp: 垂直于叶片方向的距离
+                    switch (d) {
+                        case 0: along = col;  perp = row;  break;
+                        case 1: along = -row; perp = col;  break;
+                        case 2: along = -col; perp = -row; break;
+                        default: along = row;  perp = -col; break;
+                    }
+                    if (along >= 1 && along <= bladeLen && Math.abs(perp) <= bladeW) {
+                        inBlade = true;
+                        break;
+                    }
+                }
+
+                if (inBlade) {
+                    double x = centerX + col * cellSize - brickW / 2;
+                    double y = centerY + row * cellSize - brickH / 2;
+                    if (x >= 5 && x + brickW <= GameConstant.GAME_WIDTH - 5 && y >= 5 && y + brickH <= GameConstant.GAME_HEIGHT - 80) {
                         double[] rates = getTypeRates(level, false);
                         bricks.add(createBrickByRates(x, y, rates));
                     }
                 }
             }
         }
-        
-        return bricks;
-    }
-    //生成箭头图案
-    public List<Brick> generateArrowPatternBricks(int level) {
-        List<Brick> bricks = new ArrayList<>();
-        
-        double centerX = GameConstant.GAME_WIDTH / 2.0;
-        double startY = 60;
-        double brickW = GameConstant.BRICK_WIDTH;
-        double brickH = GameConstant.BRICK_HEIGHT;
-        double gap = 8;
-        
-        int[][] arrowPattern = {
-            {0, 0, 0, 1, 0, 0, 0},
-            {0, 0, 1, 1, 1, 0, 0},
-            {0, 1, 1, 1, 1, 1, 0},
-            {1, 1, 1, 1, 1, 1, 1},
-            {0, 0, 0, 1, 0, 0, 0},
-            {0, 0, 0, 1, 0, 0, 0},
-            {0, 0, 0, 1, 0, 0, 0}
-        };
-        
-        for (int row = 0; row < arrowPattern.length; row++) {
-            for (int col = 0; col < arrowPattern[row].length; col++) {
-                if (arrowPattern[row][col] == 1) {
-                    double x = centerX - (3 * (brickW + gap)) + col * (brickW + gap);
-                    double y = startY + row * (brickH + gap);
-                    double[] rates = getTypeRates(level, false);
-                    bricks.add(createBrickByRates(x, y, rates));
-                }
-            }
-        }
-        
+
         return bricks;
     }
     /*生成虚拟小球
@@ -616,22 +730,7 @@ public class LevelManager {
     public List<VirtualBall> generateVirtualBalls(int level, List<Brick> brickList) {
         virtualBalls.clear();
         
-        // 虚拟小球数量：第1关3个，之后每关+1
-        int virtualBallCount;
-        
-        // 如果是闯关模式并且是第6-10关，使用第1-5关的基础数量，并在基础上每关+1（即对应该主题的基础数量再+1）
-        if (currentMode == GameMode.CAMPAIGN && level >= 6 && level <= 10) {
-            int baseLevel = level - 5;
-            int baseCount = 3 + (baseLevel - 1); // 基础数量来自对应的第1-5关
-            virtualBallCount = baseCount + 1; // 在基础上每关添加1个
-        } else {
-            virtualBallCount = 3 + (level - 1);
-        }
-        
-        // 无尽模式增加虚拟小球数量
-        if (currentMode == GameMode.ENDLESS) {
-            virtualBallCount += 2;
-        }
+        int virtualBallCount = calculateVirtualBallCount(level);
         
         double brickW = GameConstant.BRICK_WIDTH;
         double brickH = GameConstant.BRICK_HEIGHT;
@@ -641,12 +740,12 @@ public class LevelManager {
         List<double[]> possiblePositions = new ArrayList<>();
         
         // 在砖块网格的间隙处生成候选位置
-        int colCount = 10;
+        int colCount = GameConstant.CAMPAIGN_BRICK_COLS;
         int rowCount = 3 + level / 2;
         
         // 无尽模式调整行列数
         if (currentMode == GameMode.ENDLESS) {
-            colCount = 14 + (level / 2);
+            colCount = GameConstant.ENDLESS_BRICK_COLS_BASE + (level / 2);
             if (colCount > 20) colCount = 20;
             rowCount = 6 + level / 2;
             if (rowCount > 12) rowCount = 12;
@@ -692,7 +791,7 @@ public class LevelManager {
          }
         
         // 从候选位置中选择指定数量的位置，确保彼此之间有足够距离
-        double minDistance = 60.0; // 最小间距60像素
+        double minDistance = GameConstant.VIRTUAL_BALL_MIN_DISTANCE;
         
         for (int i = 0; i < virtualBallCount && !possiblePositions.isEmpty(); i++) {
             // 筛选出与已选位置距离足够的位置
@@ -750,6 +849,26 @@ public class LevelManager {
         }
         
         return virtualBalls;
+    }
+
+    private int calculateVirtualBallCount(int level) {
+        int virtualBallCount;
+        
+        // 如果是闯关模式并且是第6-10关，使用第1-5关的基础数量，并在基础上每关+1
+        if (currentMode == GameMode.CAMPAIGN && level >= 6 && level <= 10) {
+            int baseLevel = level - 5;
+            int baseCount = 3 + (baseLevel - 1);
+            virtualBallCount = baseCount + 1;
+        } else {
+            virtualBallCount = 3 + (level - 1);
+        }
+        
+        // 无尽模式增加虚拟小球数量
+        if (currentMode == GameMode.ENDLESS) {
+            virtualBallCount += 2;
+        }
+        
+        return virtualBallCount;
     }
 
     //获取虚拟小球列表

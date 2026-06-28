@@ -1,6 +1,7 @@
-package org.example;
+package org.example.model;
 
 import javafx.scene.paint.Color;
+import org.example.util.GameConstant;
 
 public class VirtualBall {
     private double x, y;

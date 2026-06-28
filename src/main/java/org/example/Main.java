@@ -1,11 +1,13 @@
 package org.example;
 import javafx.application.Application;
 import javafx.stage.Stage;
+import org.example.controller.GameController;
+
 public class Main extends Application {
     @Override
     public void start(Stage primaryStage) {
-        GameView gameView = new GameView(primaryStage);
-        gameView.show();
+        GameController controller = new GameController(primaryStage);
+        controller.start(primaryStage, controller.getView().getCanvas());
     }
     public static void main(String[] args) {
         launch(args);

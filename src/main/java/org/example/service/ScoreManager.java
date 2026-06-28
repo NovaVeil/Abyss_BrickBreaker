@@ -1,9 +1,12 @@
-package org.example;
+package org.example.service;
 // 计分管理器：计分机制
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
+import org.example.model.Brick;
+import org.example.model.GiftBrick;
+import org.example.model.HardBrick;
 
 public class ScoreManager {
     private final IntegerProperty score;
