@@ -306,28 +306,149 @@ public class GameView {
     }
 
     private void drawVictoryOverlay() {
-        gc.setFill(Color.rgb(0, 0, 0, 0.7));
+        gc.setFill(Color.rgb(0, 0, 0, 0.5));
         gc.fillRect(0, 0, AbyssBrickGame.GAME_WIDTH, AbyssBrickGame.GAME_HEIGHT);
 
+        drawVictoryBackground();
+        
+        drawVictoryTitle();
+        
+        drawVictoryStats();
+        
+        drawVictoryRating();
+        
+        drawVictoryCountdown();
+        
+        drawVictoryHint();
+        
+        drawVictoryParticles();
+    }
+    
+    private void drawVictoryBackground() {
+        double centerY = AbyssBrickGame.GAME_HEIGHT / 2.0;
+        
+        javafx.scene.paint.Stop[] stops = new javafx.scene.paint.Stop[] {
+            new javafx.scene.paint.Stop(0, Color.web("#FFD93D", 0.3)),
+            new javafx.scene.paint.Stop(0.5, Color.web("#FF6B9D", 0.2)),
+            new javafx.scene.paint.Stop(1, Color.web("#4A90E2", 0.3))
+        };
+        
+        javafx.scene.paint.LinearGradient gradient = new javafx.scene.paint.LinearGradient(
+            0, 0, 0, AbyssBrickGame.GAME_HEIGHT, true, 
+            javafx.scene.paint.CycleMethod.NO_CYCLE, stops);
+        
+        gc.setFill(gradient);
+        gc.fillRect(0, centerY - 150, AbyssBrickGame.GAME_WIDTH, 300);
+    }
+    
+    private void drawVictoryTitle() {
+        double centerY = AbyssBrickGame.GAME_HEIGHT / 2.0;
+        
         gc.setFill(Color.web("#FFD93D"));
         gc.setFont(FONT_VICTORY);
         gc.setTextAlign(TextAlignment.CENTER);
-        gc.fillText("关卡完成！",
+        
+        gc.setStroke(Color.web("#FFA500"));
+        gc.setLineWidth(3);
+        gc.strokeText("🎉 关卡完成！ 🎉",
                 AbyssBrickGame.GAME_WIDTH / 2.0,
-                AbyssBrickGame.GAME_HEIGHT / 2.0 - 80);
-
+                centerY - 100);
+        gc.fillText("🎉 关卡完成！ 🎉",
+                AbyssBrickGame.GAME_WIDTH / 2.0,
+                centerY - 100);
+        
+        gc.setLineWidth(1);
+    }
+    
+    private void drawVictoryStats() {
+        double centerY = AbyssBrickGame.GAME_HEIGHT / 2.0;
+        double startX = AbyssBrickGame.GAME_WIDTH / 2.0 - 150;
+        double startY = centerY - 40;
+        
+        gc.setFont(FONT_UI_MEDIUM);
+        gc.setTextAlign(TextAlignment.LEFT);
+        
+        gc.setFill(Color.WHITE);
+        gc.fillText("本关得分:", startX, startY);
+        gc.setFill(Color.web("#FFD93D"));
+        gc.fillText(String.valueOf(game.getScoreManager().getScoreValue()), startX + 120, startY);
+        
+        gc.setFill(Color.WHITE);
+        gc.fillText("当前关卡:", startX, startY + 35);
+        gc.setFill(Color.web("#00FF88"));
+        gc.fillText(String.valueOf(game.getCurrentLevel()), startX + 120, startY + 35);
+        
+        gc.setFill(Color.WHITE);
+        gc.fillText("剩余生命:", startX, startY + 70);
+        gc.setFill(Color.web("#FF6B9D"));
+        gc.fillText(String.valueOf(game.getLifeCount()), startX + 120, startY + 70);
+    }
+    
+    private void drawVictoryRating() {
+        double centerY = AbyssBrickGame.GAME_HEIGHT / 2.0;
+        double centerX = AbyssBrickGame.GAME_WIDTH / 2.0;
+        
+        int score = game.getScoreManager().getScoreValue();
+        int stars = 1;
+        if (score > 1000) stars = 3;
+        else if (score > 500) stars = 2;
+        
+        StringBuilder starStr = new StringBuilder();
+        for (int i = 0; i < stars; i++) {
+            starStr.append("⭐");
+        }
+        
+        gc.setFont(Font.font("Microsoft YaHei", 48));
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.setFill(Color.web("#FFD93D"));
+        gc.fillText(starStr.toString(), centerX, centerY + 140);
+        
+        String ratingText = "";
+        if (stars == 3) ratingText = "太棒了！";
+        else if (stars == 2) ratingText = "不错哦！";
+        else ratingText = "继续加油！";
+        
+        gc.setFont(FONT_UI_MEDIUM);
+        gc.setFill(Color.web("#00FF88"));
+        gc.fillText(ratingText, centerX, centerY + 175);
+    }
+    
+    private void drawVictoryCountdown() {
+        double centerY = AbyssBrickGame.GAME_HEIGHT / 2.0;
+        
         gc.setFill(Color.WHITE);
         gc.setFont(Font.font("Microsoft YaHei", 36));
+        gc.setTextAlign(TextAlignment.CENTER);
+        
+        gc.setStroke(Color.web("#4A90E2"));
+        gc.setLineWidth(2);
+        gc.strokeText(String.valueOf(game.getVictoryCountdownSeconds()),
+                AbyssBrickGame.GAME_WIDTH / 2.0,
+                centerY + 230);
         gc.fillText(String.valueOf(game.getVictoryCountdownSeconds()),
                 AbyssBrickGame.GAME_WIDTH / 2.0,
-                AbyssBrickGame.GAME_HEIGHT / 2.0 + 20);
-
+                centerY + 230);
+        
+        gc.setLineWidth(1);
+    }
+    
+    private void drawVictoryHint() {
+        double centerY = AbyssBrickGame.GAME_HEIGHT / 2.0;
+        
         gc.setFont(FONT_UI_MEDIUM);
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.setFill(Color.WHITE);
         gc.fillText("点击鼠标左键跳过",
                 AbyssBrickGame.GAME_WIDTH / 2.0,
-                AbyssBrickGame.GAME_HEIGHT / 2.0 + 80);
+                centerY + 280);
     }
-
+    
+    private void drawVictoryParticles() {
+        for (org.example.model.VictoryParticle particle : game.getVictoryParticles()) {
+            particle.render(gc);
+        }
+    }
+    
     private void drawGameOverOverlay() {
         gc.setFill(Color.rgb(0, 0, 0, 0.8));
         gc.fillRect(0, 0, AbyssBrickGame.GAME_WIDTH, AbyssBrickGame.GAME_HEIGHT);

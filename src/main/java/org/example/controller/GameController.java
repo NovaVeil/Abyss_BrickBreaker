@@ -197,6 +197,11 @@ public class GameController {
                     handleKeyboardMovement();
                     game.update(now);
                 }
+                
+                if (game.isVictoryScreen()) {
+                    game.updateVictoryParticles(now);
+                }
+                
                 view.render(showingModeSelection, showingLevelSelection, showingPauseMenu, 
                            modeSelector, levelSelector, gamePaused);
             }

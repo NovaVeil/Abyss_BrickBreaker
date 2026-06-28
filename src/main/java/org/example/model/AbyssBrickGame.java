@@ -11,6 +11,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 
 public class AbyssBrickGame {
     private final AudioManager audioManager = AudioManager.getInstance();
@@ -44,7 +45,8 @@ public class AbyssBrickGame {
     private boolean victoryScreen;
     private int victoryCountdownSeconds;
     private long lastVictoryCountdownTime;
-    
+    private List<VictoryParticle> victoryParticles;
+    private long lastParticleSpawnTime;
 
     private static final String SAVE_DIR_NAME = ".abyss_brickbreaker";
     private static final String SAVE_FILE_NAME = "max_unlocked_level.dat";
@@ -62,6 +64,7 @@ public class AbyssBrickGame {
         brickList = new ArrayList<>();
         ballList = new ArrayList<>();
         virtualBallList = new ArrayList<>();
+        victoryParticles = new ArrayList<>();
         currentLevel = 1;
         lifeCount = GameConstant.LIVES_COUNT;
         gameRunning = false;
@@ -78,7 +81,6 @@ public class AbyssBrickGame {
         selectingLevel = false;
         selectedCampaignLevel = 1;
 
-        // 读取历史最高分
         this.highScore = ScoreFile.loadHighScore();
 
 
@@ -384,6 +386,8 @@ public class AbyssBrickGame {
         victoryScreen = true;
         victoryCountdownSeconds = 3;
         lastVictoryCountdownTime = 0;
+        lastParticleSpawnTime = 0;
+        victoryParticles.clear();
         gameRunning = false;
         
         ballList.clear();
@@ -391,7 +395,48 @@ public class AbyssBrickGame {
         virtualBallList.clear();
         aliveBrickCount = 0;
         
+        spawnCelebrationParticles();
+        
         System.out.println(">>> 关卡完成！显示胜利画面，3秒后进入第 " + (currentLevel + 1) + " 关");
+    }
+    
+    private void spawnCelebrationParticles() {
+        Random random = new Random();
+        for (int i = 0; i < 50; i++) {
+            double x = random.nextDouble() * GAME_WIDTH;
+            double y = GAME_HEIGHT + random.nextDouble() * 100;
+            victoryParticles.add(new VictoryParticle(x, y));
+        }
+    }
+    
+    public void updateVictoryParticles(long now) {
+        if (lastParticleSpawnTime == 0) {
+            lastParticleSpawnTime = now;
+        }
+        
+        if (now - lastParticleSpawnTime > 100000000L) {
+            Random random = new Random();
+            int count = random.nextInt(3) + 2;
+            for (int i = 0; i < count; i++) {
+                double x = random.nextDouble() * GAME_WIDTH;
+                double y = GAME_HEIGHT + 20;
+                victoryParticles.add(new VictoryParticle(x, y));
+            }
+            lastParticleSpawnTime = now;
+        }
+        
+        Iterator<VictoryParticle> iterator = victoryParticles.iterator();
+        while (iterator.hasNext()) {
+            VictoryParticle particle = iterator.next();
+            particle.update(0.016);
+            if (!particle.isAlive()) {
+                iterator.remove();
+            }
+        }
+    }
+    
+    public List<VictoryParticle> getVictoryParticles() {
+        return victoryParticles;
     }
     
     private void gameOverWin() {
