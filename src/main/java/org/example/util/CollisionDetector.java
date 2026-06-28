@@ -79,6 +79,7 @@ public class CollisionDetector {
         }
 
         if (hit) {
+            AudioManager.getInstance().playHitSound();
             if (brick.getShape() == Brick.BrickShape.TRIANGLE) {
                 ball.reflectVertical();
                 double brickCenterY = brick.getY() + brick.getHeight() / 2.0;
@@ -111,10 +112,7 @@ public class CollisionDetector {
             }
 
             brick.isHit();
-            
-            if (brick.isAlive()) {
-                AudioManager.getInstance().playHitSound();
-            }
+
         }
     }
 

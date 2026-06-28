@@ -140,7 +140,7 @@ public class AbyssBrickGame {
         }
     }
 
-    public void update() {
+    public void update(long now) {
         if (lifeCount <= 0) {
             return;
         }
@@ -151,8 +151,9 @@ public class AbyssBrickGame {
             }
 
             for (Ball ball : ballList) {
-                ball.move();
+                ball.move(now);
             }
+
 
             checkAllCollision();
             checkGameStatus();

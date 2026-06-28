@@ -12,6 +12,12 @@ public class ImageLoader {
     // ===== 开始界面背景 =====
     public static final Image BG_MENU = loadImage("/images/bg_menu.png");
 
+    // ===== 砖块材质 =====
+    public static final Image BRICK_NORMAL_IMG = loadImage("/images/brick_normal.png");
+    public static final Image BRICK_HARD_IMG = loadImage("/images/brick_hard.png");
+    public static final Image BRICK_GIFT_IMG = loadImage("/images/brick_gift.png");
+    public static final Image BRICK_TRIANGLE_IMG = loadImage("/images/brick_triangle.png");
+
     // ===== 主题背景池 =====
     private static final Map<ThemeType, Image> THEME_BACKGROUNDS = new HashMap<>();
 
