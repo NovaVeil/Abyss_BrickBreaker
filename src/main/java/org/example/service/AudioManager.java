@@ -45,7 +45,6 @@ public class AudioManager {
         try {
             URL bgmUrl = getClass().getResource("/audios/bgm.wav");
             URL hitUrl = getClass().getResource("/audios/hit.mp3");
-            URL levelUpUrl = getClass().getResource("/audios/level_up.wav");
 
             if (bgmUrl != null) {
                 bgmClip = new AudioClip(bgmUrl.toString());
@@ -60,13 +59,6 @@ public class AudioManager {
                 hitClip.setVolume(0.6);
             } else {
                 throw new RuntimeException("错误：找不到撞击音效文件 hit.wav");
-            }
-
-            if (levelUpUrl != null) {
-                levelUpClip = new AudioClip(levelUpUrl.toString());
-                levelUpClip.setVolume(0.7);
-            } else {
-                System.err.println("警告：找不到升级音效文件 level_up.wav");
             }
 
         } catch (Exception e) {
@@ -101,15 +93,6 @@ public class AudioManager {
     public void playHitSound() {
         if (hitClip != null) {
             hitClip.play();
-        }
-    }
-
-    /**
-     * 播放升级音效
-     */
-    public void playLevelUpSound() {
-        if (levelUpClip != null) {
-            levelUpClip.play();
         }
     }
 

@@ -282,8 +282,6 @@ public class AbyssBrickGame {
         double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
         baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, currentLevel);
 
-        AudioManager.getInstance().playLevelUpSound();
-
         startCountdown();
     }
 
