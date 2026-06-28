@@ -13,7 +13,7 @@ import java.nio.file.Paths;
 public class ScoreFile {
 
     // 存档文件名
-    private static final String FILE_NAME = "./src/main/data/score.txt";
+    private static final String FILE_NAME = "./src/main/java/org/example/data/score.txt";
 
     /**
      * 读取历史最高分

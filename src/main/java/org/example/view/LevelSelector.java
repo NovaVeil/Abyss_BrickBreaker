@@ -6,6 +6,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import org.example.util.GameConstant;
+import javafx.scene.image.Image;
 
 public class LevelSelector {
     private Canvas canvas;
@@ -70,29 +71,69 @@ public class LevelSelector {
         gc.setFill(Color.WHITE);
         gc.setFont(Font.font("Microsoft YaHei", 18));
         gc.setTextAlign(TextAlignment.LEFT);
-        gc.fillText("砖块类型说明：", legendX, legendY);
+        gc.fillText("砖块材质说明：", legendX, legendY);
 
-        gc.setFill(Color.web("#4A90E2"));
-        gc.fillRoundRect(legendX, legendY + 10, 30, 20, 3, 3);
+        // 1. 普通 / 坚硬 / 礼物：矩形砖块（用图片）
+        Object[][] legends = {
+                {ImageLoader.BRICK_NORMAL_IMG, "普通材质 (1滴血)"},
+                {ImageLoader.BRICK_HARD_IMG, "坚硬材质 (2滴血)"},
+                {ImageLoader.BRICK_GIFT_IMG, "礼物材质 (3滴血)"}
+        };
+
+        double currentY = legendY + 10;
+
+        for (Object[] legend : legends) {
+            Image img = (Image) legend[0];
+            String text = (String) legend[1];
+
+            if (img != null) {
+                double imgHeight = 20;
+                double imgWidth = img.getWidth() * (imgHeight / img.getHeight());
+                gc.drawImage(img, legendX, currentY, imgWidth, imgHeight);
+            } else {
+                gc.setFill(Color.GRAY);
+                gc.fillRect(legendX, currentY, 30, 20);
+            }
+
+            gc.setFill(Color.WHITE);
+            gc.setFont(Font.font("Microsoft YaHei", 14));
+            gc.fillText(text, legendX + 40, currentY + 15);
+
+            currentY += 30;
+        }
+
+        // 2. ✅ 三角材质（单独画：三角形裁剪 + 图片）
+        double triX = legendX;
+        double triY = currentY;
+        double triSize = 24;
+
+        Image triangleImg = ImageLoader.BRICK_TRIANGLE_IMG;
+
+        if (triangleImg != null) {
+            gc.save();
+
+            gc.beginPath();
+            gc.moveTo(triX + triSize / 2, triY);
+            gc.lineTo(triX + triSize, triY + triSize);
+            gc.lineTo(triX, triY + triSize);
+            gc.closePath();
+
+            gc.clip();
+            gc.drawImage(triangleImg, triX, triY, triSize, triSize);
+
+            gc.restore();
+        } else {
+            gc.setFill(Color.GRAY);
+            gc.fillRect(triX, triY, triSize, triSize);
+        }
+
         gc.setFill(Color.WHITE);
         gc.setFont(Font.font("Microsoft YaHei", 14));
-        gc.fillText("普通砖块 (1滴血)", legendX + 40, legendY + 27);
-
-        gc.setFill(Color.web("#F5A623"));
-        gc.fillRoundRect(legendX, legendY + 40, 30, 20, 3, 3);
-        gc.setFill(Color.WHITE);
-        gc.fillText("坚硬砖块 (2滴血)", legendX + 40, legendY + 57);
-
-        gc.setFill(Color.web("#7ED321"));
-        gc.fillRoundRect(legendX, legendY + 70, 30, 20, 3, 3);
-        gc.setFill(Color.WHITE);
-        gc.fillText("礼物砖块 (3滴血)", legendX + 40, legendY + 87);
-
-        gc.setFill(Color.web("#9B59B6"));
-        gc.fillRoundRect(legendX, legendY + 100, 30, 20, 3, 3);
-        gc.setFill(Color.WHITE);
-        gc.fillText("三角砖块 (1滴血)", legendX + 40, legendY + 117);
+        gc.fillText("三角材质 (1滴血)",
+                triX + triSize + 20,
+                triY + triSize / 2 + 5);
     }
+
 
     public Integer handleClick(double mouseX, double mouseY) {
         for (LevelButton button : levelButtons) {

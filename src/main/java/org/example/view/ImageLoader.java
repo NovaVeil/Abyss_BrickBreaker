@@ -23,7 +23,7 @@ public class ImageLoader {
 
     static {
         THEME_BACKGROUNDS.put(ThemeType.THEME_1, loadImage("/images/bg_theme1.png"));
-        THEME_BACKGROUNDS.put(ThemeType.THEME_2, loadImage("/images/bg_theme2.png"));
+        THEME_BACKGROUNDS.put(ThemeType.THEME_2, loadImage("/images/bg_theme2.jpeg"));
         THEME_BACKGROUNDS.put(ThemeType.THEME_3, loadImage("/images/bg_theme3.png"));
         THEME_BACKGROUNDS.put(ThemeType.THEME_4, loadImage("/images/bg_theme4.png"));
         THEME_BACKGROUNDS.put(ThemeType.THEME_5, loadImage("/images/bg_theme5.png"));

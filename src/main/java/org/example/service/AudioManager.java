@@ -16,8 +16,6 @@ public class AudioManager {
     // 各种音效的 AudioClip 对象
     private AudioClip bgmClip;
     private AudioClip hitClip;
-    private AudioClip levelUpClip;
-    private AudioClip game_loseClip;
 
     /**
      * 私有构造方法，防止外部直接 new
@@ -47,8 +45,6 @@ public class AudioManager {
         try {
             URL bgmUrl = getClass().getResource("/audios/bgm.wav");
             URL hitUrl = getClass().getResource("/audios/hit.mp3");
-            URL levelUpUrl = getClass().getResource("/audios/level_up.wav");
-            URL game_loseUrl = getClass().getResource("/audios/game_lose.mp3");
 
             if (bgmUrl != null) {
                 bgmClip = new AudioClip(bgmUrl.toString());
@@ -65,19 +61,6 @@ public class AudioManager {
                 throw new RuntimeException("错误：找不到撞击音效文件 hit.wav");
             }
 
-            if (levelUpUrl != null) {
-                levelUpClip = new AudioClip(levelUpUrl.toString());
-                levelUpClip.setVolume(0.8);
-            } else {
-                throw new RuntimeException("错误：找不到通关音效文件 level_up.wav");
-            }
-
-            if (game_loseUrl != null) {
-                game_loseClip = new AudioClip(game_loseUrl.toString());
-                game_loseClip.setVolume(0.8);
-            } else {
-                throw new RuntimeException("错误：找不到游戏结束音效文件 game_lose.mp3");
-            }
         } catch (Exception e) {
             System.err.println("错误：加载音效文件失败" + e.getMessage());
             e.printStackTrace();
@@ -114,23 +97,6 @@ public class AudioManager {
         }
     }
 
-    /**
-     * 播放通关音效
-     */
-    public void playLevelUpSound() {
-        if (levelUpClip != null) {
-            levelUpClip.play();
-        }
-    }
-
-    /**
-     * 播放游戏结束音效
-     */
-    public void playGameLoseSound() {
-        if (game_loseClip != null) {
-            game_loseClip.play();
-        }
-    }
 
     public void dispose() {
         if (bgmClip != null) {
