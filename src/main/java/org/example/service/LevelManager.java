@@ -431,53 +431,40 @@ public class LevelManager {
     private List<Brick> generateEndlessBricks(int level) {
         List<Brick> bricks = new ArrayList<>();
 
-        // 无尽模式：更多行列，更高密度
-        int colCount = GameConstant.ENDLESS_BRICK_COLS_BASE + (level / 2); // 第1关14列，之后每2关+1列
-        if (colCount > 20) colCount = 20; // 最多20列
+        int colCount = GameConstant.ENDLESS_BRICK_COLS_BASE + (level / 2);
+        if (colCount > 20) colCount = 20;
         
-        int rowCount = 6 + level / 2; // 第1关6行，之后每2关+1行
-        if (rowCount > 12) rowCount = 12; // 最多12行
+        int rowCount = 6 + level / 2;
+        if (rowCount > 12) rowCount = 12;
 
-        // 砖块布局参数
-        double startX = 10;                          // 起始X坐标（更小边距）
-        double startY = 40;                          // 起始Y坐标
-        double brickW = GameConstant.BRICK_WIDTH;   // 砖块宽度
-        double brickH = GameConstant.BRICK_HEIGHT;  // 砖块高度
-        double gap = GameConstant.BRICK_GAP;         // 砖块间距
+        double brickW = GameConstant.BRICK_WIDTH;
+        double brickH = GameConstant.BRICK_HEIGHT;
+        double gap = GameConstant.BRICK_GAP;
 
-        // 砖块类型概率配置（无尽模式更难）
-        double normalRate = 0.55;  // 普通砖块55%
-        double hardRate = 0.80;    // 坚硬砖块累计80%（占25%）
-        double triangleRate = 0.0; // 三角形砖块概率
-                                   // 礼物砖块20%
+        double totalWidth = colCount * brickW + (colCount - 1) * gap;
+        double startX = (GameConstant.GAME_WIDTH - totalWidth) / 2.0;
+        double startY = 40;
+
+        double normalRate = 0.55;
+        double hardRate = 0.80;
+        double triangleRate = 0.0;
         
-        // 随关卡提高难度
         if (level >= 3) {
-            normalRate = 0.45;  // 普通砖块45%
-            hardRate = 0.75;    // 坚硬砖块累计75%（占30%）
-            triangleRate = 0.10; // 三角形砖块10%
-                                 // 礼物砖块15%
+            normalRate = 0.45;
+            hardRate = 0.75;
+            triangleRate = 0.10;
         }
         if (level >= 5) {
-            normalRate = 0.40;  // 普通砖块40%
-            hardRate = 0.70;    // 坚硬砖块累计70%（占30%）
-            triangleRate = 0.15; // 三角形砖块15%
-                                 // 礼物砖块15%
+            normalRate = 0.40;
+            hardRate = 0.70;
+            triangleRate = 0.15;
         }
 
-        // 双重循环生成砖块网格
         for (int row = 0; row < rowCount; row++) {
             for (int col = 0; col < colCount; col++) {
-                // 计算当前砖块的位置坐标
                 double x = startX + col * (brickW + gap);
                 double y = startY + row * (brickH + gap);
 
-                // 检查是否超出右边界
-                if (x + brickW > GameConstant.GAME_WIDTH - 10) {
-                    continue;
-                }
-
-                // 根据概率随机决定砖块类型
                 double rand = Math.random();
                 Brick brick;
                 if (rand < normalRate) {

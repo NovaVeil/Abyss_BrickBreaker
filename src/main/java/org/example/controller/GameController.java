@@ -3,12 +3,8 @@ package org.example.controller;
 import javafx.animation.AnimationTimer;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
 import javafx.scene.input.KeyCode;
 import javafx.stage.Stage;
-
-import java.util.Optional;
 
 import org.example.model.AbyssBrickGame;
 import org.example.model.Baffle;
@@ -26,6 +22,8 @@ public class GameController {
     private AnimationTimer gameLoop;
     private boolean showingModeSelection;
     private boolean showingLevelSelection;
+    private boolean showingPauseMenu;
+    private boolean gamePaused;
 
     private boolean moveLeftPressed = false;
     private boolean moveRightPressed = false;
@@ -41,6 +39,8 @@ public class GameController {
 
         this.showingModeSelection = true;
         this.showingLevelSelection = false;
+        this.showingPauseMenu = false;
+        this.gamePaused = false;
 
         setupInputHandlers(primaryStage, canvas);
         setupGameLoop(canvas);
@@ -72,13 +72,14 @@ public class GameController {
 
         scene.setOnKeyPressed(event -> {
             KeyCode code = event.getCode();
-            if (code == KeyCode.P && !showingModeSelection && !showingLevelSelection) {
-                togglePause();
+            
+            if (code == KeyCode.ESCAPE && !showingModeSelection && !showingLevelSelection && !showingPauseMenu && game.isGameRunning()) {
+                gamePaused = true;
+                showingPauseMenu = true;
+                System.out.println(">>> 游戏暂停，小球位置已保存");
             }
-            if (code == KeyCode.ESCAPE && !showingModeSelection && !showingLevelSelection) {
-                showPauseMenu(primaryStage);
-            }
-            if (!showingModeSelection && !showingLevelSelection) {
+            
+            if (!showingModeSelection && !showingLevelSelection && !showingPauseMenu && !gamePaused) {
                 if (code == KeyCode.A || code == KeyCode.LEFT) {
                     moveLeftPressed = true;
                 }
@@ -90,7 +91,7 @@ public class GameController {
 
         scene.setOnKeyReleased(event -> {
             KeyCode code = event.getCode();
-            if (!showingModeSelection && !showingLevelSelection) {
+            if (!showingModeSelection && !showingLevelSelection && !showingPauseMenu) {
                 if (code == KeyCode.A || code == KeyCode.LEFT) {
                     moveLeftPressed = false;
                 }
@@ -105,7 +106,9 @@ public class GameController {
                 modeSelector.handleMouseMove(event.getX(), event.getY());
             } else if (showingLevelSelection) {
                 levelSelector.handleMouseMove(event.getX(), event.getY());
-            } else {
+            } else if (showingPauseMenu) {
+                view.handlePauseMenuMouseMove(event.getX(), event.getY());
+            } else if (!gamePaused && game.isGameRunning()) {
                 double mouseX = event.getX();
                 double paddleNewX = mouseX - game.getBaffle().getWidth() / 2;
                 double paddleFixedY = view.getCanvasHeight() - game.getBaffle().getHeight() - 10;
@@ -120,7 +123,9 @@ public class GameController {
                     if (selectedMode == GameMode.CAMPAIGN) {
                         showingModeSelection = false;
                         showingLevelSelection = true;
-                        levelSelector.updateMaxUnlockedLevel(game.getMaxUnlockedLevel());
+                        int currentMaxLevel = game.getMaxUnlockedLevel();
+                        System.out.println(">>> 进入关卡选择器，当前最大解锁关卡: " + currentMaxLevel);
+                        levelSelector.updateMaxUnlockedLevel(currentMaxLevel);
                     } else {
                         showingModeSelection = false;
                         game.startWithMode(selectedMode);
@@ -129,26 +134,69 @@ public class GameController {
             } else if (showingLevelSelection) {
                 Integer selectedLevel = levelSelector.handleClick(event.getX(), event.getY());
                 if (selectedLevel != null) {
+                    System.out.println(">>> 选择了关卡: " + selectedLevel);
                     showingLevelSelection = false;
                     game.startCampaignLevel(selectedLevel);
                 }
-            } else if (!game.isGameRunning()) {
+            } else if (showingPauseMenu) {
+                String action = view.handlePauseMenuClick(event.getX(), event.getY());
+                if (action != null) {
+                    handlePauseMenuAction(action);
+                }
+                return;
+            } else if (!game.isGameRunning() && !game.isCountdownActive()) {
                 game.restart();
                 showingModeSelection = true;
                 showingLevelSelection = false;
+                showingPauseMenu = false;
+                gamePaused = false;
             }
         });
 
         canvas.requestFocus();
     }
 
+    private void handlePauseMenuAction(String action) {
+        switch (action) {
+            case "resume":
+                gamePaused = false;
+                showingPauseMenu = false;
+                resetBallUpdateTime();
+                System.out.println(">>> 继续游戏，从暂停位置恢复，小球位置和所有数据保持不变");
+                break;
+            case "restart":
+                game.restartCurrentLevel();
+                showingPauseMenu = false;
+                gamePaused = false;
+                System.out.println(">>> 重新开始当前关卡，所有状态重置（包括生命值）");
+                break;
+            case "exit":
+                game.resetModeSelection();
+                showingModeSelection = true;
+                showingLevelSelection = false;
+                showingPauseMenu = false;
+                gamePaused = false;
+                System.out.println(">>> 退出到主菜单");
+                break;
+        }
+    }
+
+    private void resetBallUpdateTime() {
+        for (org.example.model.Ball ball : game.getBallList()) {
+            ball.resetLastUpdateTime();
+        }
+    }
+
     private void setupGameLoop(Canvas canvas) {
         gameLoop = new AnimationTimer() {
             @Override
             public void handle(long now) {
-                handleKeyboardMovement();
-                game.update(now);
-                view.render(showingModeSelection, showingLevelSelection, modeSelector, levelSelector);
+                if (!gamePaused && !showingPauseMenu) {
+                    handleKeyboardMovement();
+                    game.update(now);
+                }
+                view.render(showingModeSelection, showingLevelSelection, showingPauseMenu, 
+                           modeSelector, levelSelector, gamePaused);
             }
         };
     }
@@ -164,36 +212,6 @@ public class GameController {
         }
         if (moveRightPressed) {
             baffle.moveRight();
-        }
-    }
-
-    private void togglePause() {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("游戏暂停");
-        alert.setHeaderText("游戏已暂停");
-        alert.setContentText("点击确定继续游戏");
-        alert.showAndWait();
-    }
-
-    private void showPauseMenu(Stage primaryStage) {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("游戏菜单");
-        alert.setHeaderText("游戏暂停");
-        alert.setContentText("选择操作：");
-
-        ButtonType resumeButton = new ButtonType("继续游戏");
-        ButtonType restartButton = new ButtonType("重新开始");
-        ButtonType exitButton = new ButtonType("退出游戏");
-
-        alert.getButtonTypes().setAll(resumeButton, restartButton, exitButton);
-
-        Optional<ButtonType> result = alert.showAndWait();
-
-        if (result.isPresent() && result.get() == restartButton) {
-            game.restart();
-            showingModeSelection = true;
-        } else if (result.isPresent() && result.get() == exitButton) {
-            primaryStage.close();
         }
     }
 

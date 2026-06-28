@@ -7,6 +7,7 @@ import org.example.util.GameConstant;
 import org.example.service.AudioManager;
 import org.example.util.CollisionDetector;
 
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -38,7 +39,14 @@ public class AbyssBrickGame {
     private int selectedCampaignLevel;
     private int highScore = 0;
 
+    private static final String SAVE_DIR_NAME = ".abyss_brickbreaker";
+    private static final String SAVE_FILE_NAME = "max_unlocked_level.dat";
+    private static final File SAVE_DIR = new File(System.getProperty("user.home"), SAVE_DIR_NAME);
+    private static final File SAVE_FILE = new File(SAVE_DIR, SAVE_FILE_NAME);
+
     public AbyssBrickGame() {
+        ensureSaveDirectoryExists();
+        
         brickList = new ArrayList<>();
         ballList = new ArrayList<>();
         virtualBallList = new ArrayList<>();
@@ -51,7 +59,10 @@ public class AbyssBrickGame {
         levelManager = new LevelManager();
         currentMode = null;
         modeSelected = false;
-        maxUnlockedLevel = 1;
+        
+        this.maxUnlockedLevel = loadMaxUnlockedLevel();
+        System.out.println("=== 游戏初始化完成，最大解锁关卡: " + this.maxUnlockedLevel + " ===");
+        
         selectingLevel = false;
         selectedCampaignLevel = 1;
 
@@ -63,6 +74,17 @@ public class AbyssBrickGame {
         baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, currentLevel);
 
         audioManager.playBGM();
+    }
+
+    private void ensureSaveDirectoryExists() {
+        try {
+            if (!SAVE_DIR.exists()) {
+                SAVE_DIR.mkdirs();
+                System.out.println(">>> 创建存档目录: " + SAVE_DIR.getAbsolutePath());
+            }
+        } catch (Exception e) {
+            System.err.println(">>> 创建存档目录失败: " + e.getMessage());
+        }
     }
 
     public void startWithMode(GameMode mode) {
@@ -262,6 +284,7 @@ public class AbyssBrickGame {
                 currentLevel++;
                 if (currentLevel > maxUnlockedLevel) {
                     maxUnlockedLevel = currentLevel;
+                    saveMaxUnlockedLevel(maxUnlockedLevel);
                 }
                 scoreManager.nextLevel();
                 levelManager.initLevelStyle(currentLevel);
@@ -325,12 +348,43 @@ public class AbyssBrickGame {
         selectingLevel = false;
         selectedCampaignLevel = 1;
         levelManager.setGameMode(GameMode.CAMPAIGN);
+        
+        this.maxUnlockedLevel = loadMaxUnlockedLevel();
+        System.out.println("=== 游戏重启，重新加载最大解锁关卡: " + this.maxUnlockedLevel + " ===");
 
         ballList.clear();
         brickList.clear();
         virtualBallList.clear();
         aliveBrickCount = 0;
         audioManager.playBGM();
+    }
+
+    public void restartCurrentLevel() {
+        int savedLevel = currentLevel;
+        GameMode savedMode = currentMode;
+        
+        gameRunning = false;
+        countdownActive = false;
+        scoreManager = new ScoreManager();
+        lifeCount = GameConstant.LIVES_COUNT;
+        
+        ballList.clear();
+        brickList.clear();
+        virtualBallList.clear();
+        aliveBrickCount = 0;
+        
+        currentLevel = savedLevel;
+        currentMode = savedMode;
+        
+        levelManager.initLevelStyle(currentLevel);
+        initLevelBrick(currentLevel);
+        
+        double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
+        baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, currentLevel);
+        
+        startCountdown();
+        
+        System.out.println(">>> 重新开始当前关卡: " + currentLevel + "，生命值重置为 " + lifeCount);
     }
 
     public void resetModeSelection() {
@@ -408,5 +462,63 @@ public class AbyssBrickGame {
 
     public LevelManager getLevelManager() {
         return levelManager;
+    }
+
+    private int loadMaxUnlockedLevel() {
+        try {
+            if (SAVE_FILE.exists()) {
+                BufferedReader reader = new BufferedReader(new FileReader(SAVE_FILE));
+                String line = reader.readLine();
+                int level = Integer.parseInt(line.trim());
+                reader.close();
+                System.out.println(">>> ✓ 从文件读取到最大解锁关卡: " + level);
+                System.out.println(">>>   文件路径: " + SAVE_FILE.getAbsolutePath());
+                return Math.max(1, level);
+            } else {
+                System.out.println(">>> ℹ 存档文件不存在，使用默认值 1");
+                System.out.println(">>>   预期文件路径: " + SAVE_FILE.getAbsolutePath());
+            }
+        } catch (Exception e) {
+            System.err.println(">>> ✗ 读取关卡解锁状态失败: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return 1;
+    }
+
+    private void saveMaxUnlockedLevel(int level) {
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(SAVE_FILE));
+            writer.write(String.valueOf(level));
+            writer.flush();
+            writer.close();
+            System.out.println(">>> ✓ 已保存最大解锁关卡到文件: " + level);
+            System.out.println(">>>   文件路径: " + SAVE_FILE.getAbsolutePath());
+            
+            verifySaveFile(level);
+        } catch (Exception e) {
+            System.err.println(">>> ✗ 保存关卡解锁状态失败: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    private void verifySaveFile(int expectedLevel) {
+        try {
+            if (SAVE_FILE.exists()) {
+                BufferedReader reader = new BufferedReader(new FileReader(SAVE_FILE));
+                String line = reader.readLine();
+                int savedLevel = Integer.parseInt(line.trim());
+                reader.close();
+                
+                if (savedLevel == expectedLevel) {
+                    System.out.println(">>> ✓ 文件验证成功，保存的关卡: " + savedLevel);
+                } else {
+                    System.err.println(">>> ✗ 文件验证失败！期望: " + expectedLevel + "，实际: " + savedLevel);
+                }
+            } else {
+                System.err.println(">>> ✗ 文件验证失败！文件不存在");
+            }
+        } catch (Exception e) {
+            System.err.println(">>> ✗ 文件验证异常: " + e.getMessage());
+        }
     }
 }

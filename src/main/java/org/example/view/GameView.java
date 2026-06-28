@@ -18,10 +18,25 @@ public class GameView {
     private GraphicsContext gc;
     private AbyssBrickGame game;
 
+    private static final int PAUSE_BUTTON_WIDTH = 200;
+    private static final int PAUSE_BUTTON_HEIGHT = 50;
+    private static final int PAUSE_BUTTON_GAP = 20;
+    private static final int PAUSE_START_Y = 250;
+
+    private PauseButton resumeButton;
+    private PauseButton restartButton;
+    private PauseButton exitButton;
+
+    private boolean resumeHovered = false;
+    private boolean restartHovered = false;
+    private boolean exitHovered = false;
+
     public GameView(Stage stage, Canvas canvas, AbyssBrickGame game) {
         this.canvas = canvas;
         this.gc = canvas.getGraphicsContext2D();
         this.game = game;
+
+        initializePauseButtons();
 
         BorderPane root = new BorderPane();
         root.setCenter(canvas);
@@ -35,8 +50,19 @@ public class GameView {
         stage.setY((screenHeight - AbyssBrickGame.GAME_HEIGHT) / 2);
     }
 
-    public void render(boolean showingModeSelection, boolean showingLevelSelection,
-                       GameModeSelector modeSelector, LevelSelector levelSelector) {
+    private void initializePauseButtons() {
+        double centerX = AbyssBrickGame.GAME_WIDTH / 2.0;
+        double buttonX = centerX - PAUSE_BUTTON_WIDTH / 2.0;
+        
+        resumeButton = new PauseButton(buttonX, PAUSE_START_Y, PAUSE_BUTTON_WIDTH, PAUSE_BUTTON_HEIGHT, "继续游戏");
+        restartButton = new PauseButton(buttonX, PAUSE_START_Y + PAUSE_BUTTON_HEIGHT + PAUSE_BUTTON_GAP, 
+                                       PAUSE_BUTTON_WIDTH, PAUSE_BUTTON_HEIGHT, "重新开始");
+        exitButton = new PauseButton(buttonX, PAUSE_START_Y + (PAUSE_BUTTON_HEIGHT + PAUSE_BUTTON_GAP) * 2, 
+                                    PAUSE_BUTTON_WIDTH, PAUSE_BUTTON_HEIGHT, "退出到主菜单");
+    }
+
+    public void render(boolean showingModeSelection, boolean showingLevelSelection, boolean showingPauseMenu,
+                       GameModeSelector modeSelector, LevelSelector levelSelector, boolean gamePaused) {
         if (showingModeSelection) {
             modeSelector.render();
             return;
@@ -69,9 +95,30 @@ public class GameView {
             drawCountdownOverlay();
         }
 
+        if (showingPauseMenu || gamePaused) {
+            drawPauseMenu();
+        }
+
         if (!game.isGameRunning() && game.getLifeCount() <= 0) {
             drawGameOverOverlay();
         }
+    }
+
+    public void handlePauseMenuMouseMove(double mouseX, double mouseY) {
+        resumeHovered = resumeButton.contains(mouseX, mouseY);
+        restartHovered = restartButton.contains(mouseX, mouseY);
+        exitHovered = exitButton.contains(mouseX, mouseY);
+    }
+
+    public String handlePauseMenuClick(double mouseX, double mouseY) {
+        if (resumeButton.contains(mouseX, mouseY)) {
+            return "resume";
+        } else if (restartButton.contains(mouseX, mouseY)) {
+            return "restart";
+        } else if (exitButton.contains(mouseX, mouseY)) {
+            return "exit";
+        }
+        return null;
     }
 
     private void drawCountdownOverlay() {
@@ -218,8 +265,24 @@ public class GameView {
 
         gc.setTextAlign(TextAlignment.CENTER);
         gc.setFont(Font.font("Microsoft YaHei", 14));
-        gc.fillText("鼠标/A D键移动挡板 | P暂停 | ESC菜单",
+        gc.fillText("鼠标/A D键移动挡板 | ESC暂停/菜单",
                 AbyssBrickGame.GAME_WIDTH / 2.0, 20);
+    }
+
+    private void drawPauseMenu() {
+        gc.setFill(Color.rgb(0, 0, 0, 0.7));
+        gc.fillRect(0, 0, AbyssBrickGame.GAME_WIDTH, AbyssBrickGame.GAME_HEIGHT);
+
+        gc.setFill(Color.web("#FFD93D"));
+        gc.setFont(Font.font("Microsoft YaHei", 48));
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.fillText("游戏暂停",
+                AbyssBrickGame.GAME_WIDTH / 2.0,
+                180);
+
+        resumeButton.render(gc, resumeHovered);
+        restartButton.render(gc, restartHovered);
+        exitButton.render(gc, exitHovered);
     }
 
     private void drawGameOverOverlay() {
@@ -268,5 +331,43 @@ public class GameView {
 
     public Canvas getCanvas() {
         return canvas;
+    }
+
+    private static class PauseButton {
+        private double x, y, width, height;
+        private String text;
+
+        public PauseButton(double x, double y, double width, double height, String text) {
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+            this.text = text;
+        }
+
+        public void render(GraphicsContext gc, boolean hovered) {
+            if (hovered) {
+                gc.setFill(Color.web("#4A90E2", 0.8));
+                gc.setStroke(Color.WHITE);
+                gc.setLineWidth(3);
+            } else {
+                gc.setFill(Color.web("#FFFFFF", 0.3));
+                gc.setStroke(Color.WHITE);
+                gc.setLineWidth(2);
+            }
+
+            gc.fillRoundRect(x, y, width, height, 10, 10);
+            gc.strokeRoundRect(x, y, width, height, 10, 10);
+
+            gc.setFill(Color.WHITE);
+            gc.setFont(Font.font("Microsoft YaHei", 20));
+            gc.setTextAlign(TextAlignment.CENTER);
+            gc.fillText(text, x + width / 2, y + height / 2 + 7);
+        }
+
+        public boolean contains(double mouseX, double mouseY) {
+            return mouseX >= x && mouseX <= x + width &&
+                   mouseY >= y && mouseY <= y + height;
+        }
     }
 }

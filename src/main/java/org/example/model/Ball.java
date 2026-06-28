@@ -49,6 +49,10 @@ public class Ball {
 
         double deltaTime = (now - lastUpdateTime) / 1_000_000_000.0;
 
+        if (deltaTime > 0.1) {
+            deltaTime = 0.016;
+        }
+
         x += dx * deltaTime * 60;
         y += dy * deltaTime * 60;
 
@@ -128,5 +132,9 @@ public class Ball {
     
     public void setY(double y) {
         this.y = y;
+    }
+
+    public void resetLastUpdateTime() {
+        this.lastUpdateTime = 0;
     }
 }
