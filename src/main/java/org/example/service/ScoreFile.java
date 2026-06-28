@@ -7,120 +7,114 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import org.example.model.GameMode;
 
 public class ScoreFile {
 
-    private static final String FILE_NAME = "./src/main/java/org/example/data/score.txt";
+    private static final String FILE_CAMPAIGN = "./src/main/java/org/example/data/score_campaign.txt";
+    private static final String FILE_ENDLESS   = "./src/main/java/org/example/data/score_endless.txt";
 
-    public static int loadHighScore() {
+    // ✅ 核心：根据模式返回文件名
+    private static String getFileName(GameMode mode) {
+        if (mode == GameMode.ENDLESS) {
+            return FILE_ENDLESS;
+        }
+        return FILE_CAMPAIGN;
+    }
+
+    // ✅ 保存最高分（已正确）
+    public static boolean saveHighScore(int newScore, GameMode mode) {
+        int highScore = loadHighScore(mode);
+        if (newScore > highScore) {
+            try (FileWriter writer = new FileWriter(getFileName(mode))) {
+                writer.write(String.valueOf(newScore));
+                return true;
+            } catch (IOException e) {
+                System.err.println("保存最高分失败：" + e.getMessage());
+                return false;
+            }
+        }
+        return false;
+    }
+
+    // ✅ 读取最高分（已正确）
+    public static int loadHighScore(GameMode mode) {
         try {
-            File file = new File(FILE_NAME);
-            if (!file.exists()) {
-                return 0;
-            }
+            File file = new File(getFileName(mode));
+            if (!file.exists()) return 0;
 
-            String[] lines = Files.readString(Paths.get(FILE_NAME)).trim().split("\n");
-            if (lines.length == 0 || lines[0].trim().isEmpty()) {
-                return 0;
-            }
-
-            return Integer.parseInt(lines[0].trim());
-
+            String content = Files.readString(Paths.get(getFileName(mode))).trim();
+            return content.isEmpty() ? 0 : Integer.parseInt(content);
         } catch (Exception e) {
             System.err.println("读取最高分失败：" + e.getMessage());
             return 0;
         }
     }
 
-    public static boolean saveHighScore(int newScore) {
-        int highScore = loadHighScore();
-
-        if (newScore > highScore) {
-            int maxLevel = loadMaxUnlockedLevel();
-            Map<Integer, Integer> levelScores = loadLevelScores();
-            saveAll(newScore, maxLevel, levelScores);
-            return true;
-        }
-        return false;
-    }
+    // ==================== 以下是闯关模式专用（CAMPAIGN ONLY）====================
 
     public static int loadMaxUnlockedLevel() {
+        // 闯关模式固定用 CAMPAIGN 文件
         try {
-            File file = new File(FILE_NAME);
-            if (!file.exists()) {
-                return 1;
-            }
+            File file = new File(FILE_CAMPAIGN);
+            if (!file.exists()) return 1;
 
-            String[] lines = Files.readString(Paths.get(FILE_NAME)).trim().split("\n");
-            if (lines.length < 2 || lines[1].trim().isEmpty()) {
-                return 1;
-            }
+            String[] lines = Files.readString(Paths.get(FILE_CAMPAIGN)).trim().split("\n");
+            if (lines.length < 2 || lines[1].trim().isEmpty()) return 1;
 
             return Integer.parseInt(lines[1].trim());
-
         } catch (Exception e) {
-            System.err.println("读取最高解锁关卡失败：" + e.getMessage());
             return 1;
         }
     }
 
     public static void saveMaxUnlockedLevel(int level) {
-        int highScore = loadHighScore();
         int currentMax = loadMaxUnlockedLevel();
         if (level > currentMax) {
-            Map<Integer, Integer> levelScores = loadLevelScores();
-            saveAll(highScore, level, levelScores);
+            Map<Integer, Integer> scores = loadLevelScores();
+            saveAll(level, scores); // ✅ 只保存闯关数据
         }
     }
 
     public static Map<Integer, Integer> loadLevelScores() {
-        Map<Integer, Integer> levelScores = new HashMap<>();
+        Map<Integer, Integer> scores = new HashMap<>();
         try {
-            File file = new File(FILE_NAME);
-            if (!file.exists()) {
-                return levelScores;
-            }
+            File file = new File(FILE_CAMPAIGN);
+            if (!file.exists()) return scores;
 
-            String[] lines = Files.readString(Paths.get(FILE_NAME)).trim().split("\n");
+            String[] lines = Files.readString(Paths.get(FILE_CAMPAIGN)).trim().split("\n");
             for (int i = 2; i < lines.length; i++) {
-                String line = lines[i].trim();
-                if (line.isEmpty()) continue;
-                String[] parts = line.split("\\s+");
+                String[] parts = lines[i].trim().split("\\s+");
                 if (parts.length >= 2) {
-                    levelScores.put(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
+                    scores.put(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
                 }
             }
-
         } catch (Exception e) {
             System.err.println("读取关卡分数失败：" + e.getMessage());
         }
-        return levelScores;
+        return scores;
     }
 
-    public static void saveLevelScore(int level, int score, int maxUnlockedLevel) {
-        Map<Integer, Integer> levelScores = loadLevelScores();
-        levelScores.put(level, score);
-        int highScore = loadHighScore();
-        saveAll(highScore, maxUnlockedLevel, levelScores);
+    public static void saveLevelScore(int level, int score) {
+        Map<Integer, Integer> scores = loadLevelScores();
+        scores.put(level, score);
+        saveAll(Math.max(loadMaxUnlockedLevel(), level), scores);
     }
 
-    public static boolean saveAll(int highScore, int maxUnlockedLevel, Map<Integer, Integer> levelScores) {
-        File file = new File(FILE_NAME);
-        File parentDir = file.getParentFile();
-        if (parentDir != null && !parentDir.exists()) {
-            parentDir.mkdirs();
-        }
+    // ✅ 私有方法：只用于闯关模式
+    private static boolean saveAll(int maxUnlockedLevel, Map<Integer, Integer> levelScores) {
+        File file = new File(FILE_CAMPAIGN);
+        file.getParentFile().mkdirs();
 
         try (FileWriter writer = new FileWriter(file)) {
-            writer.write(highScore + "\n");
+            writer.write(loadHighScore(GameMode.CAMPAIGN) + "\n");
             writer.write(maxUnlockedLevel + "\n");
-            for (Map.Entry<Integer, Integer> entry : levelScores.entrySet()) {
-                writer.write(entry.getKey() + " " + entry.getValue() + "\n");
+            for (Map.Entry<Integer, Integer> e : levelScores.entrySet()) {
+                writer.write(e.getKey() + " " + e.getValue() + "\n");
             }
-            writer.flush();
             return true;
         } catch (IOException e) {
-            System.err.println("保存存档失败：" + e.getMessage());
+            System.err.println("保存闯关存档失败：" + e.getMessage());
             return false;
         }
     }

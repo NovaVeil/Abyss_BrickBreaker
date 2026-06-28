@@ -76,9 +76,13 @@ public class AbyssBrickGame {
         selectingLevel = false;
         selectedCampaignLevel = 1;
 
-        // 读取历史最高分
-        this.highScore = ScoreFile.loadHighScore();
-        this.levelScores = ScoreFile.loadLevelScores();
+
+// 只有闯关模式才加载关卡分数
+        if (this.currentMode == GameMode.CAMPAIGN) {
+            this.levelScores = ScoreFile.loadLevelScores();
+        } else {
+            this.levelScores = new HashMap<>(); // 无尽模式给个空的
+        }
 
         double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
         baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, currentLevel);
@@ -249,13 +253,12 @@ public class AbyssBrickGame {
         if (currentMode == GameMode.CAMPAIGN) {
             if (currentLevel < 10) {
                 levelScores.put(currentLevel, scoreManager.getScoreValue());
-                ScoreFile.saveLevelScore(currentLevel, scoreManager.getScoreValue(), maxUnlockedLevel);
+                ScoreFile.saveLevelScore(currentLevel, scoreManager.getScoreValue());
 
                 currentLevel++;
                 if (currentLevel > maxUnlockedLevel) {
                     maxUnlockedLevel = currentLevel;
-                    ScoreFile.saveMaxUnlockedLevel(maxUnlockedLevel);
-                    System.out.println(">>> ✓ 已保存解锁关卡: " + maxUnlockedLevel);
+                    ScoreFile.saveMaxUnlockedLevel(maxUnlockedLevel); // ✅ 仅闯关
                 }
                 scoreManager.nextLevel();
                 levelManager.initLevelStyle(currentLevel);
@@ -267,12 +270,12 @@ public class AbyssBrickGame {
                 double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
                 baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, currentLevel);
 
-
                 startCountdown();
             } else {
                 gameOverWin();
             }
         } else {
+            // ✅ 无尽模式：只加等级，不存档
             currentLevel++;
             scoreManager.nextLevel();
             initNextLevel();
@@ -404,7 +407,7 @@ public class AbyssBrickGame {
         }
 
         levelScores.put(currentLevel, scoreManager.getScoreValue());
-        ScoreFile.saveLevelScore(currentLevel, scoreManager.getScoreValue(), maxUnlockedLevel);
+        ScoreFile.saveLevelScore(currentLevel, scoreManager.getScoreValue());
         ScoreFile.saveMaxUnlockedLevel(maxUnlockedLevel);
 
         victoryScreen = true;
@@ -478,9 +481,14 @@ public class AbyssBrickGame {
         ballList.clear();
         virtualBallList.clear();
         brickList.clear();
+        // ✅ 按模式保存最高分
+        ScoreFile.saveHighScore(
+                scoreManager.getScoreValue(),
+                currentMode
+        );
         aliveBrickCount = 0;
         lifeCount = 0;
-        ScoreFile.saveHighScore(scoreManager.getScoreValue());
+        ScoreFile.saveHighScore(scoreManager.getScoreValue(), currentMode);
     }
 
     public void restart() {
@@ -490,13 +498,18 @@ public class AbyssBrickGame {
         countdownActive = false;
         scoreManager = new ScoreManager();
         modeSelected = false;
-        currentMode = null;
         selectingLevel = false;
         selectedCampaignLevel = 1;
-        levelManager.setGameMode(GameMode.CAMPAIGN);
         
         this.maxUnlockedLevel = ScoreFile.loadMaxUnlockedLevel();
-        this.levelScores = ScoreFile.loadLevelScores();
+        if (this.currentMode == GameMode.CAMPAIGN) {
+            this.maxUnlockedLevel = ScoreFile.loadMaxUnlockedLevel();
+            this.levelScores = ScoreFile.loadLevelScores();
+        } else {
+            // 无尽模式：重置为初始状态
+            this.maxUnlockedLevel = 1;
+            this.levelScores = new HashMap<>();
+        }
         System.out.println("=== 游戏重启，重新加载最大解锁关卡: " + this.maxUnlockedLevel + " ===");
 
         ballList.clear();
@@ -609,7 +622,10 @@ public class AbyssBrickGame {
         return selectedCampaignLevel;
     }
     public int getHighScore() {
-        return ScoreFile.loadHighScore();
+        if (currentMode == null) {
+            return 0; // 模式未选时返回0
+        }
+        return ScoreFile.loadHighScore(currentMode);
     }
 
     public int getCurrentScore() {

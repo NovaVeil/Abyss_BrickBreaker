@@ -11,6 +11,7 @@ import javafx.stage.Stage;
 
 import org.example.model.*;
 import org.example.service.LevelManager;
+import org.example.service.ScoreFile;
 import org.example.service.ScoreManager;
 
 public class GameView {
@@ -274,12 +275,21 @@ public class GameView {
         gc.setTextAlign(TextAlignment.LEFT);
 
         gc.fillText("分数: " + scoreManager.getScoreValue(), 10, 25);
-        gc.fillText("关卡: " + game.getCurrentLevel() + " - " + levelManager.getLevelThemeName(), 10, 50);
-        gc.fillText("最高分: " + game.getHighScore(), 10, 75);
+
+        gc.fillText(
+                "关卡: " + game.getCurrentLevel() + " - " + levelManager.getLevelThemeName(),
+                10, 50
+        );
+
+        // ✅ 关键修改：根据当前模式读取对应最高分
+        int highScore = ScoreFile.loadHighScore(game.getCurrentMode());
+        gc.fillText("最高分: " + highScore, 10, 75);
 
         gc.setTextAlign(TextAlignment.RIGHT);
-        gc.fillText("生命值: " + game.getLifeCount(), AbyssBrickGame.GAME_WIDTH - 10, 25);
-        gc.fillText("剩余小球: " + game.getBallList().size(), AbyssBrickGame.GAME_WIDTH - 10, 50);
+        gc.fillText("生命值: " + game.getLifeCount(),
+                AbyssBrickGame.GAME_WIDTH - 10, 25);
+        gc.fillText("剩余小球: " + game.getBallList().size(),
+                AbyssBrickGame.GAME_WIDTH - 10, 50);
 
         gc.setTextAlign(TextAlignment.CENTER);
         gc.setFont(FONT_UI_SMALL);
@@ -467,7 +477,7 @@ public class GameView {
                 AbyssBrickGame.GAME_WIDTH / 2.0,
                 AbyssBrickGame.GAME_HEIGHT / 2.0 + 20);
 
-        int highScore = game.getHighScore();
+        int highScore = ScoreFile.loadHighScore(game.getCurrentMode());
         gc.setFill(Color.web("#FFD93D"));
         gc.fillText("历史最高分: " + highScore,
                 AbyssBrickGame.GAME_WIDTH / 2.0,
