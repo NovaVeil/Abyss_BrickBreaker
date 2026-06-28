@@ -56,8 +56,6 @@ public class AbyssBrickGame {
     private static final double NORMAL_DELTA_TIME_S = 0.016;
 
     public AbyssBrickGame() {
-        ensureSaveDirectoryExists();
-        
         brickList = new ArrayList<>();
         ballList = new ArrayList<>();
         virtualBallList = new ArrayList<>();
@@ -84,7 +82,7 @@ public class AbyssBrickGame {
 
         double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
         baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, currentLevel);
-
+        
         audioManager.playBGM();
     }
 
@@ -148,7 +146,7 @@ public class AbyssBrickGame {
     }
 
     private void updateCountdown() {
-        if (!countdownActive) {
+        if (!countdownActive || victoryScreen) {
             return;
         }
 
@@ -268,7 +266,6 @@ public class AbyssBrickGame {
                 double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
                 baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, currentLevel);
 
-                AudioManager.getInstance().playLevelUpSound();
 
                 startCountdown();
             } else {
@@ -341,6 +338,7 @@ public class AbyssBrickGame {
         if (ballList.isEmpty() && lifeCount > 0) {
             lifeCount--;
             if (lifeCount > 0) {
+                scoreManager.settleCombo();
                 respawnBallAtPaddle();
             } else {
                 gameOver();
@@ -474,7 +472,7 @@ public class AbyssBrickGame {
 
     private void gameOver() {
         gameRunning = false;
-        scoreManager.resetCombo();
+        scoreManager.settleCombo();
         countdownActive = false;
         AudioManager.getInstance().stopBGM();
         ballList.clear();
@@ -512,6 +510,7 @@ public class AbyssBrickGame {
         int savedLevel = currentLevel;
         GameMode savedMode = currentMode;
         
+        scoreManager.settleCombo();
         gameRunning = false;
         countdownActive = false;
         scoreManager = new ScoreManager();

@@ -84,6 +84,8 @@ public class ScoreManager {
     public void resetAll() {
         this.score.set(0);
         this.currentLevel = 1;
+        this.hitCount = 0;
+        this.comboScore = 0;
     }
 
     public int getScoreValue() {
