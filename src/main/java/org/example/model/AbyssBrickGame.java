@@ -302,20 +302,25 @@ public class AbyssBrickGame {
 
             for (Brick brick : brickList) {
                 int hpBefore = brick.getHp();
-                CollisionDetector.checkBrickCollision(ball, brick);
+
+                // ✅ 只要发生碰撞检测（返回值可改，或用标志位），
+                //    我们约定：checkBrickCollision 内部返回 true 表示发生了砖块碰撞
+                boolean brickHit = CollisionDetector.checkBrickCollision(ball, brick);
                 int hpAfter = brick.getHp();
 
+                // ✅ 有效碰撞（碰砖），非礼物砖块才计入连击
+                if (brickHit && !(brick instanceof GiftBrick)) {
+                    scoreManager.registerBrickHit();
+                }
+
+                // ✅ 击碎砖块 → 基础分（礼物砖块也加基础分）
                 if (hpBefore > hpAfter && hpAfter <= 0) {
                     scoreManager.addScoreForBrick(brick);
                     aliveBrickCount--;
                 }
 
-                if (brick instanceof GiftBrick) {
-                    GiftBrick gb = (GiftBrick) brick;
-                    if (gb.isTiggerGift()) {
-                        CollisionDetector.triggerGiftSkill(brick, brickList, scoreManager, this);
-
-                    }
+                if (brick instanceof GiftBrick gb && gb.isTiggerGift()) {
+                    CollisionDetector.triggerGiftSkill(brick, brickList, scoreManager, this);
                 }
             }
 
@@ -466,7 +471,6 @@ public class AbyssBrickGame {
 
     private void gameOver() {
         gameRunning = false;
-        scoreManager.resetCombo();
         countdownActive = false;
         AudioManager.getInstance().stopBGM();
         ballList.clear();
