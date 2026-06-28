@@ -2,6 +2,7 @@ package org.example;
 
 import javafx.animation.AnimationTimer;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Alert;
@@ -142,7 +143,7 @@ public class GameView {
             @Override
             public void handle(long now) {
                 handleKeyboardMovement();
-                game.update();
+                game.update(now);
                 render();
             }
         };
@@ -225,49 +226,69 @@ public class GameView {
     }
 
     private void drawBricks() {
-        boolean isRectangular = levelManager.isRectangularBricks();
-
         for (Brick brick : game.getBrickList()) {
             if (!brick.isAlive()) {
                 continue;
             }
 
-            Color brickColor;
-            int maxHp = getMaxHpForBrick(brick);
-            int currentHp = brick.getHp();
-            
+            // 1. 根据砖块类型选图
+            Image brickImage = null; // 【修改1】先初始化为 null，避免报错
+
             if (brick instanceof NormalBrick) {
-                brickColor = levelManager.getBrickStyle();
+                brickImage = ImageLoader.BRICK_NORMAL_IMG;
             } else if (brick instanceof HardBrick) {
-                brickColor = adjustColorBrightness(Color.web("#F5A623"), currentHp, maxHp);
+                brickImage = ImageLoader.BRICK_HARD_IMG;
             } else if (brick instanceof GiftBrick) {
-                brickColor = adjustColorBrightness(Color.web("#7ED321"), currentHp, maxHp);
+                brickImage = ImageLoader.BRICK_GIFT_IMG;
             } else if (brick instanceof TriangleBrick) {
-                brickColor = levelManager.getBrickStyle();
+                brickImage = ImageLoader.BRICK_TRIANGLE_IMG;
             } else {
-                brickColor = Color.WHITE;
+                // 默认是普通砖块
+                brickImage = ImageLoader.BRICK_NORMAL_IMG;
             }
 
-            gc.setFill(brickColor);
+// 2. 绘制图片
+// 【修改2】加上 != null 判断，如果图片没加载出来，就不会画，防止游戏崩溃
+            if (brickImage != null) {
+                // 根据剩余 HP 计算透明度
+                double alpha = 1.0;
 
-            if (brick.getShape() == Brick.BrickShape.TRIANGLE) {
-                drawTriangle(brick);
-            } else {
-                if (isRectangular) {
-                    gc.fillRoundRect(brick.getX(), brick.getY(),
-                            brick.getWidth(), brick.getHeight(), 5, 5);
-                    gc.setStroke(Color.WHITE);
-                    gc.setLineWidth(1);
-                    gc.strokeRoundRect(brick.getX(), brick.getY(),
-                            brick.getWidth(), brick.getHeight(), 5, 5);
-                } else {
-                    gc.fillRect(brick.getX(), brick.getY(),
-                            brick.getWidth(), brick.getHeight());
-                    gc.setStroke(Color.WHITE);
-                    gc.setLineWidth(2);
-                    gc.strokeRect(brick.getX(), brick.getY(),
-                            brick.getWidth(), brick.getHeight());
+                if (brick instanceof HardBrick && brick.getHp() == 1) {
+                    alpha = 0.5; // 被打一次后变暗 50%
                 }
+
+                gc.setGlobalAlpha(alpha);
+                if (brick.getShape() == Brick.BrickShape.TRIANGLE) {
+
+                    // 1. 保存当前画布状态
+                    gc.save();
+
+                    // 2. 定义三角形路径
+                    double x = brick.getX();
+                    double y = brick.getY();
+                    double w = brick.getWidth();
+                    double h = brick.getHeight();
+
+                    gc.beginPath();
+                    gc.moveTo(x + w / 2, y);           // 上顶点
+                    gc.lineTo(x + w, y + h);           // 右下
+                    gc.lineTo(x, y + h);               // 左下
+                    gc.closePath();
+
+                    // 3. 裁剪
+                    gc.clip();
+
+                    // 4. 在裁剪区域画图片
+                    gc.drawImage(brickImage, x, y, w, h);
+
+                    // 5. 恢复画布
+                    gc.restore();
+
+                } else {
+                    // 普通矩形砖块
+                    gc.drawImage(brickImage, brick.getX(), brick.getY(), brick.getWidth(), brick.getHeight());
+                }
+                gc.setGlobalAlpha(1.0); // 一定要恢复！
             }
         }
     }

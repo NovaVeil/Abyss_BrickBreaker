@@ -76,6 +76,7 @@ public class CollisionDetector {
         }
 
         if (hit) {
+            AudioManager.getInstance().playHitSound();
             if (brick.getShape() == Brick.BrickShape.TRIANGLE) {
                 ball.reflectVertical();
             } else {
@@ -94,10 +95,7 @@ public class CollisionDetector {
             }
 
             brick.isHit();
-            
-            if (brick.isAlive()) {
-                AudioManager.getInstance().playHitSound();
-            }
+
         }
         return hit;
     }

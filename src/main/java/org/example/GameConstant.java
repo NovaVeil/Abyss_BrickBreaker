@@ -13,8 +13,8 @@ public class GameConstant {
     public static final int BAFFLE_SPEED = 2;
     // 小球
     public static final int BALL_RADIUS = 10;
-    public static final int BALL_SPEED_X = 6;
-    public static final int BALL_SPEED_Y = 6;
+    public static final int BALL_SPEED_X = 7;
+    public static final int BALL_SPEED_Y = 7;
 
     // 砖块
     public static final int BRICK_WIDTH = 30;

@@ -38,9 +38,21 @@ public class Ball {
     }
 
     //移动方法：更新小球的位置
-    public void move() {
-        x += dx;
-        y += dy;
+    private long lastUpdateTime = 0;
+
+    public void move(long now) {
+        if (lastUpdateTime == 0) {
+            lastUpdateTime = now;
+            return;
+        }
+
+        double deltaTime = (now - lastUpdateTime) / 1_000_000_000.0;
+
+        x += dx * deltaTime * 60;
+        y += dy * deltaTime * 60;
+
+        lastUpdateTime = now;
+
         checkWallTopleftRight();
     }
     //小球碰左、右、上墙
