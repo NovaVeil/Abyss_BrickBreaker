@@ -65,9 +65,9 @@ public class CollisionDetector {
     }
 
     // 小球 碰 砖块（分边反弹）
-    public static void checkBrickCollision(Ball ball, Brick brick) {
+    public static boolean checkBrickCollision(Ball ball, Brick brick) {
         if (!brick.isAlive()) {
-            return;
+            return false;
         }
 
         boolean hit;
@@ -114,6 +114,7 @@ public class CollisionDetector {
             brick.isHit();
 
         }
+        return hit;
     }
 
     private static boolean checkRectangleCollision(Ball ball, Brick brick) {

@@ -10,8 +10,8 @@ import org.example.model.HardBrick;
 
 public class ScoreManager {
     private final IntegerProperty score;
-    private final IntegerProperty combo;
-    private final DoubleProperty comboMultiplier;
+    private int hitCount;      // 有效碰撞次数（碰砖）
+    private int comboScore;    // 连击得分（独立）
     private int currentLevel;
 
     // 基础分数配置
@@ -19,27 +19,20 @@ public class ScoreManager {
     private static final int HARD_BRICK_SCORE = 20;
     private static final int GIFT_BRICK_SCORE = 30;
 
-    // 连击配置
-    private static final int COMBO_INCREMENT = 5;
-    private static final double COMBO_MULTIPLIER_STEP = 0.5;
+
 
     public ScoreManager() {
         this.score = new SimpleIntegerProperty(0);
-        this.combo = new SimpleIntegerProperty(0);
-        this.comboMultiplier = new SimpleDoubleProperty(1.0);
         this.currentLevel = 1;
+
+        this.hitCount = 0;
+        this.comboScore = 0;
     }
 
     public void addScoreForBrick(Brick brick) {
         int baseScore = getBaseScore(brick);
-        int finalScore = (int)(baseScore * currentLevel * comboMultiplier.get());
+        int finalScore = baseScore * currentLevel;
         score.set(score.get() + finalScore);
-
-        combo.set(combo.get() + 1);
-
-        if (combo.get() % COMBO_INCREMENT == 0) {
-            comboMultiplier.set(comboMultiplier.get() + COMBO_MULTIPLIER_STEP);
-        }
     }
 
     public void addScore(int points) {
@@ -56,13 +49,41 @@ public class ScoreManager {
         }
     }
 
-    public void resetCombo() {
-        combo.set(0);
-        comboMultiplier.set(1.0);
+
+    /**
+     * 小球碰撞砖块（无论是否击碎）
+     */
+    public void registerBrickHit() {
+        hitCount++;
+    }
+
+    /**
+     * 球死亡 / 碰墙 / 碰挡板时结算
+     */
+    public void settleCombo() {
+        if (hitCount >= 2) {
+            comboScore = hitCount * 20;
+            score.set(score.get() + comboScore);
+        }
+        resetComboState();
+    }
+
+    private void resetComboState() {
+        hitCount = 0;
+        comboScore = 0;
     }
 
     public void nextLevel() {
         currentLevel++;
+    }
+
+    public void setScore(int score) {
+        this.score.set(score);
+    }
+
+    public void resetAll() {
+        this.score.set(0);
+        this.currentLevel = 1;
     }
 
     public int getScoreValue() {
@@ -73,23 +94,14 @@ public class ScoreManager {
         return score;
     }
 
-    public int getComboValue() {
-        return combo.get();
-    }
-
-    public IntegerProperty comboProperty() {
-        return combo;
-    }
-
-    public double getComboMultiplierValue() {
-        return comboMultiplier.get();
-    }
-
-    public DoubleProperty comboMultiplierProperty() {
-        return comboMultiplier;
-    }
-
     public int getCurrentLevel() {
         return currentLevel;
+    }
+    public int getHitCount() {
+        return hitCount;
+    }
+
+    public int getComboScore() {
+        return comboScore;
     }
 }

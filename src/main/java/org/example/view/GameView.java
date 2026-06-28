@@ -275,9 +275,7 @@ public class GameView {
 
         gc.fillText("分数: " + scoreManager.getScoreValue(), 10, 25);
         gc.fillText("关卡: " + game.getCurrentLevel() + " - " + levelManager.getLevelThemeName(), 10, 50);
-        gc.fillText("连击: " + scoreManager.getComboValue(), 10, 75);
-        gc.fillText("倍率: x" + String.format("%.1f", scoreManager.getComboMultiplierValue()), 10, 100);
-        gc.fillText("最高分: " + game.getHighScore(), 10, 125);
+        gc.fillText("最高分: " + game.getHighScore(), 10, 75);
 
         gc.setTextAlign(TextAlignment.RIGHT);
         gc.fillText("生命值: " + game.getLifeCount(), AbyssBrickGame.GAME_WIDTH - 10, 25);
