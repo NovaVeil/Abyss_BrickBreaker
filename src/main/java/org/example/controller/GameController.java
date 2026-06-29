@@ -146,14 +146,10 @@ public class GameController {
                     handlePauseMenuAction(action);
                 }
             } else if (!game.isGameRunning() && !game.isCountdownActive()) {
-                if (game.getCurrentMode() == GameMode.CAMPAIGN) {
-                    showingLevelSelection = true;
-                    levelSelector.updateMaxUnlockedLevel(game.getMaxUnlockedLevel());
-                } else {
-                    game.restart();
-                    showingModeSelection = true;
-                    showingLevelSelection = false;
-                }
+                game.restart();
+                game.resetModeSelection();
+                showingModeSelection = true;
+                showingLevelSelection = false;
                 showingPauseMenu = false;
                 gamePaused = false;
             }
