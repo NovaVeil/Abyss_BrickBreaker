@@ -401,8 +401,12 @@ public class AbyssBrickGame {
             }
         }
 
-        levelScores.put(currentLevel, scoreManager.getScoreValue());
-        ScoreFile.saveLevelScore(currentLevel, scoreManager.getScoreValue());
+        int currentScore = scoreManager.getScoreValue();
+        int oldScore = levelScores.getOrDefault(currentLevel, 0);
+        if (currentScore > oldScore) {
+            levelScores.put(currentLevel, currentScore);
+        }
+        ScoreFile.saveLevelScore(currentLevel, currentScore);
         ScoreFile.saveMaxUnlockedLevel(maxUnlockedLevel);
 
         victoryScreen = true;

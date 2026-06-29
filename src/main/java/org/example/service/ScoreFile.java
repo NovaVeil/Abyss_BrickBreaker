@@ -93,7 +93,7 @@ public class ScoreFile {
         int currentMax = loadMaxUnlockedLevel();
         if (level > currentMax) {
             Map<Integer, Integer> scores = loadLevelScores();
-            saveAll(level, scores); // ✅ 只保存闯关数据
+            saveAll(level, scores, 0);
         }
     }
 
@@ -118,17 +118,23 @@ public class ScoreFile {
 
     public static void saveLevelScore(int level, int score) {
         Map<Integer, Integer> scores = loadLevelScores();
-        scores.put(level, score);
-        saveAll(Math.max(loadMaxUnlockedLevel(), level), scores);
+        int oldScore = scores.getOrDefault(level, 0);
+        if (score > oldScore) {
+            scores.put(level, score);
+            saveAll(Math.max(loadMaxUnlockedLevel(), level), scores, score);
+        }
     }
 
     // ✅ 私有方法：只用于闯关模式
-    private static boolean saveAll(int maxUnlockedLevel, Map<Integer, Integer> levelScores) {
+    private static boolean saveAll(int maxUnlockedLevel, Map<Integer, Integer> levelScores, int currentScore) {
         File file = new File(FILE_CAMPAIGN);
         file.getParentFile().mkdirs();
 
+        int fileHighScore = loadHighScore(GameMode.CAMPAIGN);
+        int highScore = Math.max(fileHighScore, currentScore);
+
         try (FileWriter writer = new FileWriter(file)) {
-            writer.write(loadHighScore(GameMode.CAMPAIGN) + "\n");
+            writer.write(highScore + "\n");
             writer.write(maxUnlockedLevel + "\n");
             for (Map.Entry<Integer, Integer> e : levelScores.entrySet()) {
                 writer.write(e.getKey() + " " + e.getValue() + "\n");
