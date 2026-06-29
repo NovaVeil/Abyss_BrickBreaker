@@ -496,6 +496,7 @@ public class AbyssBrickGame {
         lifeCount = GameConstant.LIVES_COUNT;
         gameRunning = false;
         countdownActive = false;
+        victoryScreen = false;
         scoreManager = new ScoreManager();
         modeSelected = false;
         selectingLevel = false;
@@ -506,7 +507,6 @@ public class AbyssBrickGame {
             this.maxUnlockedLevel = ScoreFile.loadMaxUnlockedLevel();
             this.levelScores = ScoreFile.loadLevelScores();
         } else {
-            // 无尽模式：重置为初始状态
             this.maxUnlockedLevel = 1;
             this.levelScores = new HashMap<>();
         }
@@ -515,7 +515,12 @@ public class AbyssBrickGame {
         ballList.clear();
         brickList.clear();
         virtualBallList.clear();
+        victoryParticles.clear();
         aliveBrickCount = 0;
+
+        double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
+        baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, 1);
+
         audioManager.playBGM();
     }
 
@@ -552,6 +557,22 @@ public class AbyssBrickGame {
         this.modeSelected = false;
         this.currentMode = null;
         this.levelManager.setGameMode(GameMode.CAMPAIGN);
+
+        this.gameRunning = false;
+        this.countdownActive = false;
+        this.victoryScreen = false;
+        this.lifeCount = GameConstant.LIVES_COUNT;
+        this.currentLevel = 1;
+        this.scoreManager = new ScoreManager();
+
+        this.ballList.clear();
+        this.brickList.clear();
+        this.virtualBallList.clear();
+        this.victoryParticles.clear();
+        this.aliveBrickCount = 0;
+
+        double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
+        baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, 1);
     }
 
     public boolean isVictoryScreen() {

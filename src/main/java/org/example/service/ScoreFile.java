@@ -26,12 +26,32 @@ public class ScoreFile {
     public static boolean saveHighScore(int newScore, GameMode mode) {
         int highScore = loadHighScore(mode);
         if (newScore > highScore) {
-            try (FileWriter writer = new FileWriter(getFileName(mode))) {
-                writer.write(String.valueOf(newScore));
-                return true;
-            } catch (IOException e) {
-                System.err.println("保存最高分失败：" + e.getMessage());
-                return false;
+            if (mode == GameMode.CAMPAIGN) {
+                Map<Integer, Integer> scores = loadLevelScores();
+                int maxLevel = loadMaxUnlockedLevel();
+                try {
+                    File file = new File(FILE_CAMPAIGN);
+                    file.getParentFile().mkdirs();
+                    try (FileWriter writer = new FileWriter(file)) {
+                        writer.write(newScore + "\n");
+                        writer.write(maxLevel + "\n");
+                        for (Map.Entry<Integer, Integer> e : scores.entrySet()) {
+                            writer.write(e.getKey() + " " + e.getValue() + "\n");
+                        }
+                        return true;
+                    }
+                } catch (IOException e) {
+                    System.err.println("保存最高分失败：" + e.getMessage());
+                    return false;
+                }
+            } else {
+                try (FileWriter writer = new FileWriter(getFileName(mode))) {
+                    writer.write(String.valueOf(newScore));
+                    return true;
+                } catch (IOException e) {
+                    System.err.println("保存最高分失败：" + e.getMessage());
+                    return false;
+                }
             }
         }
         return false;
@@ -43,8 +63,9 @@ public class ScoreFile {
             File file = new File(getFileName(mode));
             if (!file.exists()) return 0;
 
-            String content = Files.readString(Paths.get(getFileName(mode))).trim();
-            return content.isEmpty() ? 0 : Integer.parseInt(content);
+            String[] lines = Files.readString(Paths.get(getFileName(mode))).trim().split("\n");
+            if (lines.length == 0 || lines[0].trim().isEmpty()) return 0;
+            return Integer.parseInt(lines[0].trim());
         } catch (Exception e) {
             System.err.println("读取最高分失败：" + e.getMessage());
             return 0;
