@@ -496,7 +496,7 @@ public class AbyssBrickGame {
         modeSelected = false;
         selectingLevel = false;
         selectedCampaignLevel = 1;
-        
+
         this.maxUnlockedLevel = ScoreFile.loadMaxUnlockedLevel();
         this.levelScores = ScoreFile.loadLevelScores();
         System.out.println("=== 游戏重启，重新加载最大解锁关卡: " + this.maxUnlockedLevel + " ===");
