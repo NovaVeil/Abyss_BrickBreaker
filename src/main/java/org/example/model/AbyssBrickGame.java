@@ -76,13 +76,7 @@ public class AbyssBrickGame {
         selectingLevel = false;
         selectedCampaignLevel = 1;
 
-
-// 只有闯关模式才加载关卡分数
-        if (this.currentMode == GameMode.CAMPAIGN) {
-            this.levelScores = ScoreFile.loadLevelScores();
-        } else {
-            this.levelScores = new HashMap<>(); // 无尽模式给个空的
-        }
+        this.levelScores = ScoreFile.loadLevelScores();
 
         double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
         baffle = new Baffle(baffleX, GAME_HEIGHT - GameConstant.BAFFLE_HEIGHT - 10, currentLevel);
@@ -97,6 +91,7 @@ public class AbyssBrickGame {
         
         if (mode == GameMode.CAMPAIGN) {
             this.selectingLevel = true;
+            this.levelScores = ScoreFile.loadLevelScores();
         } else {
             this.selectingLevel = false;
             this.currentLevel = 1;
@@ -503,13 +498,7 @@ public class AbyssBrickGame {
         selectedCampaignLevel = 1;
         
         this.maxUnlockedLevel = ScoreFile.loadMaxUnlockedLevel();
-        if (this.currentMode == GameMode.CAMPAIGN) {
-            this.maxUnlockedLevel = ScoreFile.loadMaxUnlockedLevel();
-            this.levelScores = ScoreFile.loadLevelScores();
-        } else {
-            this.maxUnlockedLevel = 1;
-            this.levelScores = new HashMap<>();
-        }
+        this.levelScores = ScoreFile.loadLevelScores();
         System.out.println("=== 游戏重启，重新加载最大解锁关卡: " + this.maxUnlockedLevel + " ===");
 
         ballList.clear();
