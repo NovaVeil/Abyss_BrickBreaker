@@ -1,6 +1,8 @@
 package org.example.service;
 
 import javafx.scene.media.AudioClip;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
 
 import java.net.URL;
 
@@ -14,9 +16,8 @@ public class AudioManager {
     private static AudioManager instance;
 
     // 各种音效的 AudioClip 对象
-    private AudioClip bgmClip;
+    private MediaPlayer bgmPlayer;
     private AudioClip hitClip;
-    private AudioClip levelUpClip;
 
     /**
      * 私有构造方法，防止外部直接 new
@@ -47,9 +48,10 @@ public class AudioManager {
             URL hitUrl = getClass().getResource("/audios/hit.mp3");
 
             if (bgmUrl != null) {
-                bgmClip = new AudioClip(bgmUrl.toString());
-                bgmClip.setCycleCount(AudioClip.INDEFINITE);
-                bgmClip.setVolume(0.3);
+                Media media = new Media(bgmUrl.toString());
+                bgmPlayer = new MediaPlayer(media);
+                bgmPlayer.setCycleCount(MediaPlayer.INDEFINITE);
+                bgmPlayer.setVolume(0.3);
             } else {
                 throw new RuntimeException("错误：找不到背景音乐文件 bgm.mp3");
             }
@@ -73,8 +75,8 @@ public class AudioManager {
      * 播放背景音乐
      */
     public void playBGM() {
-        if (bgmClip != null && !bgmClip.isPlaying()) {
-            bgmClip.play();
+        if (bgmPlayer != null && bgmPlayer.getStatus() != MediaPlayer.Status.PLAYING) {
+            bgmPlayer.play();
         }
     }
 
@@ -82,8 +84,8 @@ public class AudioManager {
      * 停止背景音乐
      */
     public void stopBGM() {
-        if (bgmClip != null) {
-            bgmClip.stop();
+        if (bgmPlayer != null) {
+            bgmPlayer.stop();
         }
     }
 
@@ -98,8 +100,8 @@ public class AudioManager {
 
 
     public void dispose() {
-        if (bgmClip != null) {
-            bgmClip.stop();
+        if (bgmPlayer != null) {
+            bgmPlayer.stop();
         }
         instance = null;
     }
