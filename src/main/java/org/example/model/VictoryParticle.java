@@ -99,8 +99,7 @@ public class VictoryParticle {
         gc.closePath();
         gc.fill();
     }
-
-    public boolean isAlive() {
-        return alpha > 0;
+    public boolean isDead() {
+        return alpha <= 0;
     }
 }

@@ -110,9 +110,8 @@ public class GameController {
                 view.handlePauseMenuMouseMove(event.getX(), event.getY());
             } else if (!gamePaused && game.isGameRunning()) {
                 double mouseX = event.getX();
-                double paddleNewX = mouseX - game.getBaffle().getWidth() / 2;
-                double paddleFixedY = view.getCanvasHeight() - game.getBaffle().getHeight() - 10;
-                game.getBaffle().moveTo(paddleNewX, paddleFixedY);
+                double baffleNewX = mouseX - game.getBaffle().getWidth() / 2;
+                game.getBaffle().moveTo(baffleNewX);
             }
         });
 

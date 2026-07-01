@@ -438,7 +438,7 @@ public class AbyssBrickGame {
         while (iterator.hasNext()) {
             VictoryParticle particle = iterator.next();
             particle.update(0.016);
-            if (!particle.isAlive()) {
+            if (particle.isDead()) {
                 iterator.remove();
             }
         }

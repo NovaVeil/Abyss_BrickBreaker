@@ -46,7 +46,7 @@ public class Baffle {
         this.color = getLevelColor(level);
     }
 
-    //挡板左右移动
+    //挡板左右移动(提供给键盘监听器调用)
     public void moveLeft() {
         if (x > 0) x -= speed;
     }
@@ -56,8 +56,8 @@ public class Baffle {
             x += speed;
     }
 
-    //移动挡板方法（仅水平移动）
-    public void moveTo(double newX, double newY) {
+    //移动挡板方法（提供给鼠标监听器调用）
+    public void moveTo(double newX) {
         this.x = newX;
         
         // 边界检查 - 左边界

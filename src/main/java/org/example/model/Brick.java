@@ -31,8 +31,8 @@ public abstract class Brick {
     }
 
     //普通方法：砖块被击破
-    public boolean isAlive() {
-        return hp > 0;
+    public boolean isDead() {
+        return hp <= 0;
     }
 
     //Getter方法，给其他类访问属性

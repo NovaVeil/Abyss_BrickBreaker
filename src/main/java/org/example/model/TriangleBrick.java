@@ -6,5 +6,4 @@ public class TriangleBrick extends Brick {
         super(x, y, 1);
         this.shape = BrickShape.TRIANGLE;
     }
-
 }

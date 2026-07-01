@@ -154,7 +154,7 @@ public class GameView {
     private void drawBricks() {
 
         for (Brick brick : game.getBrickList()) {
-            if (!brick.isAlive()) {
+            if (brick.isDead()) {
                 continue;
             }
 

@@ -8,10 +8,10 @@ public class Ball {
     private double x,y;
     private final int radius;
     private double dx,dy;
-    private Color color;
+    private final Color color;
 
     //构造方法:初始化小球位置、半径、速度、颜色
-    public Ball(double x, double y, int radius, double dx, double dy, Color color) {
+    public Ball(double x, double y, int radius, double dx, double dy) {
         this.x = x;
         this.y = y;
         this.radius = radius;
@@ -24,20 +24,20 @@ public class Ball {
     public Ball(double x, double y) {
         this(x, y, GameConstant.BALL_RADIUS,
              GameConstant.BALL_SPEED_X, 
-             GameConstant.BALL_SPEED_Y, Color.WHITE);
+             GameConstant.BALL_SPEED_Y);
     }
 
-    //移动方法：更新小球的位置
+    //记录上一次更新时间
     private long lastUpdateTime = 0;
-
+    //小球移动方法，根据当前时间更新小球位置
     public void move(long now) {
         if (lastUpdateTime == 0) {
             lastUpdateTime = now;
             return;
         }
-
+        // 计算时间差
         double deltaTime = (now - lastUpdateTime) / 1_000_000_000.0;
-
+        //防止掉帧导致的小球瞬移
         if (deltaTime > GameConstant.MAX_DELTA_TIME_S) {
             deltaTime = GameConstant.NORMAL_DELTA_TIME_S;
         }
@@ -46,7 +46,7 @@ public class Ball {
         y += dy * deltaTime * 60;
 
         lastUpdateTime = now;
-
+        //检查小球是否碰到墙壁
         checkWallTopleftRight();
     }
     //小球碰左、右、上墙

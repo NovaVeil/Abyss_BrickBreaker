@@ -66,7 +66,7 @@ public class CollisionDetector {
 
     // 小球 碰 砖块（分边反弹）
     public static boolean checkBrickCollision(Ball ball, Brick brick) {
-        if (!brick.isAlive()) {
+        if (brick.isDead()) {
             return false;
         }
 
@@ -152,7 +152,7 @@ public class CollisionDetector {
 
         for (Brick b : allBricks) {
             // 已经碎掉的不处理
-            if (!b.isAlive()) {
+            if (b.isDead()) {
                 continue;
             }
             // 跳过自身
@@ -166,7 +166,7 @@ public class CollisionDetector {
             if (sameRow || sameCol) {
                 b.isHit();
                 // 如果连锁击杀，立即计分
-                if (!b.isAlive()) {
+                if (b.isDead()) {
                     scoreManager.addScoreForBrick(b);
                     game.decrementAliveBrickCount();
                 }
