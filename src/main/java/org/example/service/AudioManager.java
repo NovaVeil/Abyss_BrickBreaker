@@ -25,7 +25,7 @@ public class AudioManager {
      */
     private AudioManager() {
         loadSounds();
-    }
+    }//从resources中加载两个音效包
 
     /**
      * 获取单例实例
@@ -37,7 +37,7 @@ public class AudioManager {
             instance = new AudioManager();
         }
         return instance;
-    }
+    }//synchronized保证线路安全
 
     /**
      * 从 resources 文件夹加载音效文件
@@ -45,27 +45,27 @@ public class AudioManager {
     private void loadSounds() {
         try {
             URL bgmUrl = getClass().getResource("/audios/bgm.wav");
-            URL hitUrl = getClass().getResource("/audios/hit.mp3");
+            URL hitUrl = getClass().getResource("/audios/hit.mp3");//获取文件路径
 
             if (bgmUrl != null) {
                 Media media = new Media(bgmUrl.toString());
                 bgmPlayer = new MediaPlayer(media);
-                bgmPlayer.setCycleCount(MediaPlayer.INDEFINITE);
-                bgmPlayer.setVolume(0.3);
+                bgmPlayer.setCycleCount(MediaPlayer.INDEFINITE);//无限循环播放
+                bgmPlayer.setVolume(0.3);//设置音量
             } else {
                 throw new RuntimeException("错误：找不到背景音乐文件 bgm.mp3");
-            }
+            }//加载背景音乐
 
             if (hitUrl != null) {
                 hitClip = new AudioClip(hitUrl.toString());
-                hitClip.setVolume(0.6);
+                hitClip.setVolume(0.6);//设置音量
             } else {
                 throw new RuntimeException("错误：找不到撞击音效文件 hit.wav");
             }
 
         } catch (Exception e) {
             System.err.println("错误：加载音效文件失败" + e.getMessage());
-            e.printStackTrace();
+            e.printStackTrace();//把错误的详细信息打印到控制台，不会影响程序运行
         }
     }
 
