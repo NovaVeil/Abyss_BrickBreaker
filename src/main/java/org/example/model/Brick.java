@@ -60,7 +60,4 @@ public abstract class Brick {
         return shape;
     }
 
-    public void setShape(BrickShape shape) {
-        this.shape = shape;
-    }
 }

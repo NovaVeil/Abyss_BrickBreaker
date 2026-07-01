@@ -221,17 +221,8 @@ public class GameController {
             baffle.moveRight();
         }
     }
-    
-
-    public AbyssBrickGame getGame() {
-        return game;
-    }
 
     public GameView getView() {
         return view;
-    }
-
-    public AnimationTimer getGameLoop() {
-        return gameLoop;
     }
 }

@@ -24,4 +24,7 @@ public class GameConstant {
     public static final int ENDLESS_BRICK_COLS_BASE = 14;
     public static final double VIRTUAL_BALL_MIN_DISTANCE = 60.0;
 
+    public static final double MAX_DELTA_TIME_S = 0.1;
+    public static final double NORMAL_DELTA_TIME_S = 0.016;
+
    }

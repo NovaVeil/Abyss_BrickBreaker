@@ -97,13 +97,4 @@ public class AudioManager {
             hitClip.play();
         }
     }
-
-
-    public void dispose() {
-        if (bgmPlayer != null) {
-            bgmPlayer.stop();
-        }
-        instance = null;
-    }
-
 }

@@ -9,7 +9,6 @@ public class Ball {
     private final int radius;
     private double dx,dy;
     private Color color;
-    private int bricksHitcount = 0;  // 记录碰撞的砖块数
 
     //构造方法:初始化小球位置、半径、速度、颜色
     public Ball(double x, double y, int radius, double dx, double dy, Color color) {
@@ -27,16 +26,6 @@ public class Ball {
              GameConstant.BALL_SPEED_X, 
              GameConstant.BALL_SPEED_Y, Color.WHITE);
     }
-    public void incrementBricksHit() {
-        this.bricksHitcount++;
-    }
-
-    public int getBricksHit() {
-        return bricksHitcount;
-    }
-    public void resetBricksHit() {
-        this.bricksHitcount = 0;
-    }
 
     //移动方法：更新小球的位置
     private long lastUpdateTime = 0;
@@ -49,8 +38,8 @@ public class Ball {
 
         double deltaTime = (now - lastUpdateTime) / 1_000_000_000.0;
 
-        if (deltaTime > 0.1) {
-            deltaTime = 0.016;
+        if (deltaTime > GameConstant.MAX_DELTA_TIME_S) {
+            deltaTime = GameConstant.NORMAL_DELTA_TIME_S;
         }
 
         x += dx * deltaTime * 60;
@@ -114,10 +103,6 @@ public class Ball {
         return color;
     }
 
-    public void setColor(Color color) {
-        this.color = color;
-    }
-    
     public void setDx(int dx) {
         this.dx = dx;
     }

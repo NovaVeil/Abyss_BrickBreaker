@@ -2,8 +2,6 @@ package org.example.service;
 // 计分管理器：计分机制
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.SimpleDoubleProperty;
 import org.example.model.Brick;
 import org.example.model.GiftBrick;
 import org.example.model.HardBrick;
@@ -18,7 +16,6 @@ public class ScoreManager {
     private static final int NORMAL_BRICK_SCORE = 10;
     private static final int HARD_BRICK_SCORE = 20;
     private static final int GIFT_BRICK_SCORE = 30;
-
 
 
     public ScoreManager() {
@@ -90,20 +87,5 @@ public class ScoreManager {
 
     public int getScoreValue() {
         return score.get();
-    }
-
-    public IntegerProperty scoreProperty() {
-        return score;
-    }
-
-    public int getCurrentLevel() {
-        return currentLevel;
-    }
-    public int getHitCount() {
-        return hitCount;
-    }
-
-    public int getComboScore() {
-        return comboScore;
     }
 }

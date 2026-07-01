@@ -7,8 +7,4 @@ public class TriangleBrick extends Brick {
         this.shape = BrickShape.TRIANGLE;
     }
 
-    public TriangleBrick(double x, double y, int hp) {
-        super(x, y, hp);
-        this.shape = BrickShape.TRIANGLE;
-    }
 }

@@ -23,7 +23,7 @@ public class ScoreFile {
     }
 
     // ✅ 保存最高分（已正确）
-    public static boolean saveHighScore(int newScore, GameMode mode) {
+    public static void saveHighScore(int newScore, GameMode mode) {
         int highScore = loadHighScore(mode);
         if (newScore > highScore) {
             if (mode == GameMode.CAMPAIGN) {
@@ -38,23 +38,18 @@ public class ScoreFile {
                         for (Map.Entry<Integer, Integer> e : scores.entrySet()) {
                             writer.write(e.getKey() + " " + e.getValue() + "\n");
                         }
-                        return true;
                     }
                 } catch (IOException e) {
                     System.err.println("保存最高分失败：" + e.getMessage());
-                    return false;
                 }
             } else {
                 try (FileWriter writer = new FileWriter(getFileName(mode))) {
                     writer.write(String.valueOf(newScore));
-                    return true;
                 } catch (IOException e) {
                     System.err.println("保存最高分失败：" + e.getMessage());
-                    return false;
                 }
             }
         }
-        return false;
     }
 
     // ✅ 读取最高分（已正确）
@@ -126,7 +121,7 @@ public class ScoreFile {
     }
 
     // ✅ 私有方法：只用于闯关模式
-    private static boolean saveAll(int maxUnlockedLevel, Map<Integer, Integer> levelScores, int currentScore) {
+    private static void saveAll(int maxUnlockedLevel, Map<Integer, Integer> levelScores, int currentScore) {
         File file = new File(FILE_CAMPAIGN);
         file.getParentFile().mkdirs();
 
@@ -139,10 +134,8 @@ public class ScoreFile {
             for (Map.Entry<Integer, Integer> e : levelScores.entrySet()) {
                 writer.write(e.getKey() + " " + e.getValue() + "\n");
             }
-            return true;
         } catch (IOException e) {
             System.err.println("保存闯关存档失败：" + e.getMessage());
-            return false;
         }
     }
 }

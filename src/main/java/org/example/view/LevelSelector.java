@@ -9,7 +9,6 @@ import org.example.util.GameConstant;
 import javafx.scene.image.Image;
 
 public class LevelSelector {
-    private Canvas canvas;
     private GraphicsContext gc;
 
     private static final int TOTAL_LEVELS = 10;
@@ -23,7 +22,6 @@ public class LevelSelector {
     private int maxUnlockedLevel;
 
     public LevelSelector(Canvas canvas, int maxUnlockedLevel) {
-        this.canvas = canvas;
         this.gc = canvas.getGraphicsContext2D();
         this.maxUnlockedLevel = maxUnlockedLevel;
         initializeButtons();
@@ -221,10 +219,6 @@ public class LevelSelector {
 
         public void setLocked(boolean locked) {
             this.locked = locked;
-        }
-
-        public boolean isHovered() {
-            return hovered;
         }
 
         public void setHovered(boolean hovered) {

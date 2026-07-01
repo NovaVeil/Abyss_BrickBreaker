@@ -158,34 +158,10 @@ public class GameView {
                 continue;
             }
 
-            Image brickImage = null;
-
-            if (brick instanceof NormalBrick) {
-                brickImage = ImageLoader.BRICK_NORMAL_IMG;
-            } else if (brick instanceof HardBrick) {
-                brickImage = ImageLoader.BRICK_HARD_IMG;
-            } else if (brick instanceof GiftBrick) {
-                brickImage = ImageLoader.BRICK_GIFT_IMG;
-            } else if (brick instanceof TriangleBrick) {
-                brickImage = ImageLoader.BRICK_TRIANGLE_IMG;
-            } else {
-                brickImage = ImageLoader.BRICK_NORMAL_IMG;
-            }
+            Image brickImage = getBrickImage(brick);
 
             if (brickImage != null) {
-                double alpha = 1.0;
-                
-                if (brick instanceof HardBrick) {
-                    if (brick.getHp() == 1) {
-                        alpha = 0.5;
-                    } else if (brick.getHp() == 2) {
-                        alpha = 0.75;
-                    }
-                } else if (brick instanceof GiftBrick) {
-                    int maxHp = 3;
-                    double currentHp = brick.getHp();
-                    alpha = 0.4 + (currentHp / maxHp) * 0.6;
-                }
+                double alpha = getADouble(brick);
 
                 gc.setGlobalAlpha(alpha);
                 if (brick.getShape() == Brick.BrickShape.TRIANGLE) {
@@ -211,6 +187,40 @@ public class GameView {
                 gc.setGlobalAlpha(1.0);
             }
         }
+    }
+
+    private static double getADouble(Brick brick) {
+        double alpha = 1.0;
+
+        if (brick instanceof HardBrick) {
+            if (brick.getHp() == 1) {
+                alpha = 0.5;
+            } else if (brick.getHp() == 2) {
+                alpha = 0.75;
+            }
+        } else if (brick instanceof GiftBrick) {
+            int maxHp = 3;
+            double currentHp = brick.getHp();
+            alpha = 0.4 + (currentHp / maxHp) * 0.6;
+        }
+        return alpha;
+    }
+
+    private static Image getBrickImage(Brick brick) {
+        Image brickImage;
+
+        if (brick instanceof NormalBrick) {
+            brickImage = ImageLoader.BRICK_NORMAL_IMG;
+        } else if (brick instanceof HardBrick) {
+            brickImage = ImageLoader.BRICK_HARD_IMG;
+        } else if (brick instanceof GiftBrick) {
+            brickImage = ImageLoader.BRICK_GIFT_IMG;
+        } else if (brick instanceof TriangleBrick) {
+            brickImage = ImageLoader.BRICK_TRIANGLE_IMG;
+        } else {
+            brickImage = ImageLoader.BRICK_NORMAL_IMG;
+        }
+        return brickImage;
     }
 
     private void drawBaffle() {
@@ -411,7 +421,7 @@ public class GameView {
         gc.setFill(Color.web("#FFD93D"));
         gc.fillText(starStr.toString(), centerX, centerY + 140);
         
-        String ratingText = "";
+        String ratingText;
         if (stars == 3) ratingText = "太棒了！";
         else if (stars == 2) ratingText = "不错哦！";
         else ratingText = "继续加油！";

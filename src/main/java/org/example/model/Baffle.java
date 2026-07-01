@@ -70,11 +70,6 @@ public class Baffle {
         }
     }
 
-    // 仅更新X坐标（兼容旧代码）
-    public void moveTo(double newX) {
-        moveTo(newX, this.y);
-    }
-
     // 根据关卡获取挡板颜色
     private Color getLevelColor(int level) {
         switch (level % 5) {
@@ -104,15 +99,8 @@ public class Baffle {
         return height;
     }
 
-    public double getSpeed() {
-        return speed;
-    }
-
     public Color getColor() {
         return color;
     }
 
-    public void setColor(Color color) {
-        this.color = color;
-    }
 }

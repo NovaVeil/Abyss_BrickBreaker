@@ -8,7 +8,6 @@ import org.example.service.AudioManager;
 import org.example.util.CollisionDetector;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
@@ -27,7 +26,6 @@ public class AbyssBrickGame {
     private int aliveBrickCount = 0;
 
     private final List<Ball> ballsToAddBuffer = new ArrayList<>();
-    private final List<VirtualBall> virtualBallsToRemoveBuffer = new ArrayList<>();
 
     private boolean gameRunning;
     private boolean countdownActive;
@@ -38,11 +36,7 @@ public class AbyssBrickGame {
     private ScoreManager scoreManager;
     private LevelManager levelManager;
     private GameMode currentMode;
-    private boolean modeSelected;
     private int maxUnlockedLevel;
-    private boolean selectingLevel;
-    private int selectedCampaignLevel;
-    private int highScore = 0;
     private boolean victoryScreen;
     private int victoryCountdownSeconds;
     private long lastVictoryCountdownTime;
@@ -52,8 +46,6 @@ public class AbyssBrickGame {
 
     private static final long COUNTDOWN_INTERVAL_MS = 1000;
     private static final long VICTORY_COUNTDOWN_INTERVAL_NS = 1_000_000_000L;
-    private static final double MAX_DELTA_TIME_S = 0.1;
-    private static final double NORMAL_DELTA_TIME_S = 0.016;
 
     public AbyssBrickGame() {
         brickList = new ArrayList<>();
@@ -68,14 +60,10 @@ public class AbyssBrickGame {
         scoreManager = new ScoreManager();
         levelManager = new LevelManager();
         currentMode = null;
-        modeSelected = false;
         
         this.maxUnlockedLevel = ScoreFile.loadMaxUnlockedLevel();
         System.out.println("=== 游戏初始化成功，最大解锁关卡: " + this.maxUnlockedLevel + " ===");
         
-        selectingLevel = false;
-        selectedCampaignLevel = 1;
-
         this.levelScores = ScoreFile.loadLevelScores();
 
         double baffleX = GAME_WIDTH / 2.0 - GameConstant.BAFFLE_WIDTH / 2.0;
@@ -86,14 +74,11 @@ public class AbyssBrickGame {
 
     public void startWithMode(GameMode mode) {
         this.currentMode = mode;
-        this.modeSelected = true;
         levelManager.setGameMode(mode);
         
         if (mode == GameMode.CAMPAIGN) {
-            this.selectingLevel = true;
             this.levelScores = ScoreFile.loadLevelScores();
         } else {
-            this.selectingLevel = false;
             this.currentLevel = 1;
             this.lifeCount = GameConstant.LIVES_COUNT;
             
@@ -112,10 +97,8 @@ public class AbyssBrickGame {
     }
     
     public void startCampaignLevel(int level) {
-        this.selectingLevel = false;
         this.currentMode = GameMode.CAMPAIGN;
         this.currentLevel = level;
-        this.selectedCampaignLevel = level;
         
         ballList.clear();
         virtualBallList.clear();
@@ -292,7 +275,6 @@ public class AbyssBrickGame {
 
     private void checkAllCollision() {
         ballsToAddBuffer.clear();
-        virtualBallsToRemoveBuffer.clear();
         
         Iterator<Ball> ballIterator = ballList.iterator();
         while (ballIterator.hasNext()) {
@@ -487,7 +469,6 @@ public class AbyssBrickGame {
         );
         aliveBrickCount = 0;
         lifeCount = 0;
-        ScoreFile.saveHighScore(scoreManager.getScoreValue(), currentMode);
     }
 
     public void restart() {
@@ -497,9 +478,6 @@ public class AbyssBrickGame {
         countdownActive = false;
         victoryScreen = false;
         scoreManager = new ScoreManager();
-        modeSelected = false;
-        selectingLevel = false;
-        selectedCampaignLevel = 1;
 
         this.maxUnlockedLevel = ScoreFile.loadMaxUnlockedLevel();
         this.levelScores = ScoreFile.loadLevelScores();
@@ -547,7 +525,6 @@ public class AbyssBrickGame {
     }
 
     public void resetModeSelection() {
-        this.modeSelected = false;
         this.currentMode = null;
         this.levelManager.setGameMode(GameMode.CAMPAIGN);
 
@@ -619,29 +596,10 @@ public class AbyssBrickGame {
     public GameMode getCurrentMode() {
         return currentMode;
     }
-
-    public boolean isModeSelected() {
-        return modeSelected;
-    }
-    
-    public boolean isSelectingLevel() {
-        return selectingLevel;
-    }
     
     public int getMaxUnlockedLevel() {
         return maxUnlockedLevel;
     }
-    
-    public int getSelectedCampaignLevel() {
-        return selectedCampaignLevel;
-    }
-    public int getHighScore() {
-        if (currentMode == null) {
-            return 0; // 模式未选时返回0
-        }
-        return ScoreFile.loadHighScore(currentMode);
-    }
-
     public int getCurrentScore() {
         return scoreManager.getScoreValue();
     }
