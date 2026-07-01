@@ -24,7 +24,7 @@ public class LevelManager {
     public void setGameMode(GameMode mode) {
         this.currentMode = mode;
     }
-
+    //根据模式生成砖块
     public List<Brick> generateBricks(int level) {
         if (currentMode == GameMode.ENDLESS) {
             return generateEndlessBricks(level);
@@ -34,6 +34,7 @@ public class LevelManager {
     }
 
     private List<Brick> generateCampaignBricks(int level) {
+        // 后 5 关砖块图形生成
         if (level >= 6 && level <= 10) {
             int themeIndex = level % 5; // 6->1,7->2,...,10->0
             switch (themeIndex) {
@@ -51,7 +52,7 @@ public class LevelManager {
                     return generateHeartPatternBricks(level);
             }
         }
-
+        //前 5 关砖块图形生成
         switch (level % 5) {
             case 1:
                 return generateHeartPatternBricks(level);
@@ -122,11 +123,11 @@ public class LevelManager {
         double centerY = 180;
         double[] rates = getTypeRates(level, true);
         double cellSize = brickW + gap;
-
-        double scale = 1.0 + (level - 1) * 0.15;
+        //动态缩放
+        double scale = 1.0 + (level - 1) * 0.15;// 随着关卡增加，心形图案逐渐放大
         int gridW = (int)(9 * scale);
         int gridH = (int)(8 * scale);
-
+        //利用心形曲线方程生成砖块（心形曲线方程：(x^2 + y^2 - 1)^3 - x^2 * y^3 = 0））
         for (int row = 0; row < gridH; row++) {
             for (int col = 0; col < gridW; col++) {
                 double nx = (col - gridW / 2.0) / (gridW / 2.5);
@@ -158,7 +159,7 @@ public class LevelManager {
         double centerY = 180;
         double cellSize = brickW + gap;
         double[] rates = getTypeRates(level, true);
-
+        //利用for循环生成菱形图案
         int halfSize = 4 + (level - 6);
         for (int row = -halfSize; row <= halfSize; row++) {
             for (int col = -halfSize; col <= halfSize; col++) {
@@ -186,7 +187,7 @@ public class LevelManager {
 
         return bricks;
     }
-
+    //利用圆环生成环形砖块图案
     private List<Brick> generateAdvancedTheme3(int level) {
         List<Brick> bricks = new ArrayList<>();
         double brickW = GameConstant.BRICK_WIDTH;
@@ -298,7 +299,7 @@ public class LevelManager {
 
         return bricks;
     }
-
+    //生成十字风车砖块图案
     private List<Brick> generateAdvancedTheme5(int level) {
         List<Brick> bricks = new ArrayList<>();
         double brickW = GameConstant.BRICK_WIDTH;
@@ -340,9 +341,10 @@ public class LevelManager {
 
         return bricks;
     }
-
+    //判断新生成的砖块是否与现有砖块重叠
     private boolean overlapsExisting(List<Brick> bricks, double x, double y, double w, double h) {
         for (Brick brick : bricks) {
+            // 使用AABB矩形碰撞检测，判断两个矩形在X轴和Y轴上是否同时存在交集
             if (x < brick.getX() + brick.getWidth() && x + w > brick.getX() &&
                 y < brick.getY() + brick.getHeight() && y + h > brick.getY()) {
                 return true;
@@ -350,7 +352,7 @@ public class LevelManager {
         }
         return false;
     }
-
+    //生成无尽模式随机砖块图案
     private List<Brick> generateEndlessBricks(int level) {
         List<Brick> bricks = new ArrayList<>();
 
@@ -406,6 +408,9 @@ public class LevelManager {
         return bricks;
     }
 
+     /*生成圆形图案的砖块布局
+     以屏幕上方中心为圆心，根据关卡等级动态计算半径，等级越高圆形半径越大
+     遍历网格并用欧氏距离判定是否在圆内，圆内位置按概率生成各类砖块*/
     public List<Brick> generateCirclePatternBricks(int level) {
         List<Brick> bricks = new ArrayList<>();
 
@@ -441,6 +446,9 @@ public class LevelManager {
         return bricks;
     }
 
+  /*生成五角星图案的砖块布局
+  利用极坐标下的星形曲线方程，根据角度动态计算星形边界半径，等级越高星形半径越大
+  遍历网格判定格子是否在五角星轮廓内，按概率生成各类砖块*/
     public List<Brick> generateStarPatternBricks(int level) {
         List<Brick> bricks = new ArrayList<>();
 
@@ -482,6 +490,9 @@ public class LevelManager {
         return bricks;
     }
 
+     /*生成心形图案的砖块布局
+     利用隐式心形曲线方程 (x²+y²-1)³-x²y³≤0 判定网格位置是否在心形区域内，
+     随关卡提升心形图案逐渐放大*/
     public List<Brick> generateHeartPatternBricks(int level) {
         List<Brick> bricks = new ArrayList<>();
 
@@ -517,6 +528,9 @@ public class LevelManager {
         return bricks;
     }
 
+     /*生成菱形图案的砖块布局
+     利用曼哈顿距离(|col|+|row|≤halfSize)确定菱形区域，等级越高菱形越大
+     中心放置礼物砖块，外圈提高困难砖块概率，中间层按常规概率生成*/
     public List<Brick> generateDiamondPatternBricks(int level) {
         List<Brick> bricks = new ArrayList<>();
 
@@ -557,6 +571,10 @@ public class LevelManager {
         return bricks;
     }
 
+    /*生成十字风车图案的砖块布局
+    从中心向上下左右四个方向延伸矩形叶片，
+    中心放置礼物砖块，叶片内按概率生成各类砖块，
+    随关卡提升叶片越长越宽*/
     public List<Brick> generateWindmillPatternBricks(int level) {
         List<Brick> bricks = new ArrayList<>();
 
@@ -609,10 +627,11 @@ public class LevelManager {
 
         return bricks;
     }
-
+    /*生成虚拟球列表
+    根据关卡等级计算虚拟球数量，避免与砖块重叠，随机生成位置
+    虚拟球位置避免与砖块重叠，并与现有虚拟球保持一定距离*/
     public List<VirtualBall> generateVirtualBalls(int level, List<Brick> brickList) {
         virtualBalls.clear();
-        
         int virtualBallCount = calculateVirtualBallCount(level);
         
         double brickW = GameConstant.BRICK_WIDTH;
@@ -658,9 +677,7 @@ public class LevelManager {
                 
                 if (!overlaps && x > 50 && x < GameConstant.GAME_WIDTH - 50 &&
                     y > 50 && y < GameConstant.GAME_HEIGHT - 100) {
-                    double jitterX = (Math.random() - 0.5) * (brickW / 2.0);
-                    double jitterY = (Math.random() - 0.5) * (brickH / 2.0);
-                    possiblePositions.add(new double[]{x + jitterX, y + jitterY});
+                    possiblePositions.add(new double[]{x, y});
                 }
              }
          }
@@ -669,54 +686,48 @@ public class LevelManager {
         
         for (int i = 0; i < virtualBallCount && !possiblePositions.isEmpty(); i++) {
             List<double[]> validPositions = new ArrayList<>();
-            
-            if (virtualBalls.isEmpty()) {
-                validPositions.addAll(possiblePositions);
-            } else {
-                for (double[] pos : possiblePositions) {
-                    boolean tooClose = false;
-                    for (VirtualBall existingBall : virtualBalls) {
-                        double dx = pos[0] - existingBall.getX();
-                        double dy = pos[1] - existingBall.getY();
-                        double distance = Math.sqrt(dx * dx + dy * dy);
-                        if (distance < minDistance) {
-                            tooClose = true;
-                            break;
-                        }
-                    }
-                    if (!tooClose) {
-                        validPositions.add(pos);
-                    }
+            for (double[] pos : possiblePositions) {
+                if (!isTooCloseToExisting(pos[0], pos[1], minDistance)) {
+                    validPositions.add(pos);
                 }
             }
             
             if (validPositions.isEmpty()) {
-                minDistance *= 0.7; // 降低最小距离要求
-                continue; // 重新尝试
+                minDistance *= 0.7;
+                continue;
             }
             
             int index = (int) (Math.random() * validPositions.size());
             double[] selectedPos = validPositions.get(index);
-            double extraJitterX = (Math.random() - 0.5) * (brickW / 3.0);
-            double extraJitterY = (Math.random() - 0.5) * (brickH / 3.0);
-            double finalX = selectedPos[0] + extraJitterX;
-            double finalY = selectedPos[1] + extraJitterY;
-            finalX = Math.max(20, Math.min(finalX, GameConstant.GAME_WIDTH - 20));
-            finalY = Math.max(20, Math.min(finalY, GameConstant.GAME_HEIGHT - 120));
+            double extraJitterX = (Math.random() - 0.5) * (brickW / 2.0);
+            double extraJitterY = (Math.random() - 0.5) * (brickH / 2.0);
+            double finalX = Math.max(20, Math.min(selectedPos[0] + extraJitterX, GameConstant.GAME_WIDTH - 20));
+            double finalY = Math.max(20, Math.min(selectedPos[1] + extraJitterY, GameConstant.GAME_HEIGHT - 120));
             virtualBalls.add(new VirtualBall(finalX, finalY));
 
             final double finalMinDistance = minDistance;
-
-            possiblePositions.removeIf(pos -> {
-                double dx = pos[0] - selectedPos[0];
-                double dy = pos[1] - selectedPos[1];
-                return Math.sqrt(dx * dx + dy * dy) < finalMinDistance;
-            });
+            possiblePositions.removeIf(pos -> distance(pos[0], pos[1], selectedPos[0], selectedPos[1]) < finalMinDistance);
         }
         
         return virtualBalls;
     }
+//    判断虚拟球是否与现有虚拟球太近
+    private boolean isTooCloseToExisting(double x, double y, double minDistance) {
+        for (VirtualBall ball : virtualBalls) {
+            if (distance(x, y, ball.getX(), ball.getY()) < minDistance) {
+                return true;
+            }
+        }
+        return false;
+    }
+//    计算两点之间距离
 
+    private double distance(double x1, double y1, double x2, double y2) {
+        double dx = x1 - x2;
+        double dy = y1 - y2;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+//    计算虚拟球数量
     private int calculateVirtualBallCount(int level) {
         int virtualBallCount;
         
@@ -734,7 +745,7 @@ public class LevelManager {
         
         return virtualBallCount;
     }
-
+    //    获取当前关卡主题名称
     public String getLevelThemeName() {
         if (currentMode == GameMode.ENDLESS) {
             return "无尽关卡 " + currentLevel;
